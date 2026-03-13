@@ -57,7 +57,7 @@ export default function CSVImporter({ budgetId, onImported }) {
         const result = parseSabadellXLS(evt.target.result);
         if (result.error) { setError(result.error); setParsedData(null); }
         else {
-          const txns = await processWithAI(result.transactions, file.name);
+          const txns = await processWithAI(result.transactions);
           setParsedData(txns); setMetadata(result.metadata);
         }
       };
@@ -68,7 +68,7 @@ export default function CSVImporter({ budgetId, onImported }) {
         const result = parseCSV(evt.target.result);
         if (result.error) { setError(result.error); setParsedData(null); }
         else {
-          const txns = await processWithAI(result.transactions, file.name);
+          const txns = await processWithAI(result.transactions);
           setParsedData(txns); setMetadata(result.metadata);
         }
       };
