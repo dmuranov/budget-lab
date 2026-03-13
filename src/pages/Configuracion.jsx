@@ -86,10 +86,24 @@ export default function Configuracion() {
   const handleDeleteAll = async () => {
     setDeleting(true);
     setDeleteMsg(null);
-    const res = await base44.functions.invoke('deleteAllTransactions');
+
+    try {
+      const res = await base44.functions.invoke('deleteAllTransactions');
+
+      const data = res?.data || res;
+      const msg = data?.message || data?.error || "Operación completada";
+
+      setDeleteMsg(msg);
+    } catch (error) {
+      setDeleteMsg("Error: " + (error?.message || error?.data?.error || "No se pudo conectar con el servidor"));
+    }
+
     setDeleting(false);
-    setDeleteMsg(res.data.message || res.data.error);
+
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["transactions-movimientos"] });
+    queryClient.invalidateQueries({ queryKey: ["all-transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["all-transactions-pattern"] });
   };
 
   return (
