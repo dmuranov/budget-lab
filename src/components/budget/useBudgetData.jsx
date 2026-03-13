@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { NEEDS_CATEGORIES, WANTS_CATEGORIES, FIXED_CATEGORIES, INCOME_CATEGORIES } from "./constants";
+import { NECESIDADES_CATEGORIAS, DESEOS_CATEGORIAS, GASTOS_FIJOS_CATEGORIAS, DEUDA_CATEGORIAS } from "./constants";
 
 export function useBudgetData(budgetId) {
   const budgetQuery = useQuery({
@@ -18,60 +18,39 @@ export function useBudgetData(budgetId) {
   const budget = budgetQuery.data?.[0] || null;
   const transactions = txQuery.data || [];
 
-  const income = transactions.filter(t => t.direction === "income" && t.category !== "Internal Transfer");
-  const expenses = transactions.filter(t => t.direction === "expense" && t.category !== "Internal Transfer");
+  const income = transactions.filter(t => t.direction === "ingreso" && t.category !== "Traspaso Interno");
+  const expenses = transactions.filter(t => t.direction === "gasto" && t.category !== "Traspaso Interno");
 
   const totalIncome = income.reduce((s, t) => s + (t.amount || 0), 0);
   const totalExpenses = expenses.reduce((s, t) => s + (t.amount || 0), 0);
   const netCashflow = totalIncome - totalExpenses;
   const savingsRate = totalIncome > 0 ? (netCashflow / totalIncome) * 100 : 0;
 
-  // Category totals for expenses
   const expenseByCategory = {};
-  expenses.forEach(t => {
-    expenseByCategory[t.category] = (expenseByCategory[t.category] || 0) + (t.amount || 0);
-  });
+  expenses.forEach(t => { expenseByCategory[t.category] = (expenseByCategory[t.category] || 0) + (t.amount || 0); });
 
-  // Income by category
   const incomeByCategory = {};
-  income.forEach(t => {
-    incomeByCategory[t.category] = (incomeByCategory[t.category] || 0) + (t.amount || 0);
-  });
+  income.forEach(t => { incomeByCategory[t.category] = (incomeByCategory[t.category] || 0) + (t.amount || 0); });
 
-  // 50/30/20
-  const needsTotal = expenses.filter(t => NEEDS_CATEGORIES.includes(t.category)).reduce((s, t) => s + (t.amount || 0), 0);
-  const wantsTotal = expenses.filter(t => WANTS_CATEGORIES.includes(t.category)).reduce((s, t) => s + (t.amount || 0), 0);
+  const necesidadesTotal = expenses.filter(t => NECESIDADES_CATEGORIAS.includes(t.category)).reduce((s, t) => s + (t.amount || 0), 0);
+  const deseosTotal = expenses.filter(t => DESEOS_CATEGORIAS.includes(t.category)).reduce((s, t) => s + (t.amount || 0), 0);
 
-  // Fixed obligations
-  const fixedTotal = expenses.filter(t => FIXED_CATEGORIES.includes(t.category)).reduce((s, t) => s + (t.amount || 0), 0);
+  const fixedExpenses = expenses.filter(t => t.is_fixed || GASTOS_FIJOS_CATEGORIAS.includes(t.category));
+  const fixedTotal = fixedExpenses.reduce((s, t) => s + (t.amount || 0), 0);
 
-  // Recurring
-  const recurring = transactions.filter(t => t.is_recurring && t.direction === "expense");
+  const recurring = transactions.filter(t => t.is_recurring && t.direction === "gasto");
 
-  // Debt payments
-  const debtCategories = ["Loan Payment", "Mortgage", "Credit Card"];
-  const debtPayments = expenses.filter(t => debtCategories.includes(t.category));
+  const debtPayments = expenses.filter(t => DEUDA_CATEGORIAS.includes(t.category));
   const totalDebt = debtPayments.reduce((s, t) => s + (t.amount || 0), 0);
   const debtToIncome = totalIncome > 0 ? (totalDebt / totalIncome) * 100 : 0;
 
   return {
-    budget,
-    transactions,
-    income,
-    expenses,
-    totalIncome,
-    totalExpenses,
-    netCashflow,
-    savingsRate,
-    expenseByCategory,
-    incomeByCategory,
-    needsTotal,
-    wantsTotal,
-    fixedTotal,
-    recurring,
-    debtPayments,
-    totalDebt,
-    debtToIncome,
+    budget, transactions, income, expenses,
+    totalIncome, totalExpenses, netCashflow, savingsRate,
+    expenseByCategory, incomeByCategory,
+    necesidadesTotal, deseosTotal,
+    fixedExpenses, fixedTotal,
+    recurring, debtPayments, totalDebt, debtToIncome,
     isLoading: budgetQuery.isLoading || txQuery.isLoading,
     refetch: () => { budgetQuery.refetch(); txQuery.refetch(); },
   };

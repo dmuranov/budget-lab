@@ -1,4 +1,4 @@
-// Flow classification engine for Spanish bank statements
+// Motor de clasificación de movimientos para extractos bancarios españoles
 
 function matchesAny(text, keywords) {
   const lower = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -8,134 +8,135 @@ function matchesAny(text, keywords) {
   });
 }
 
-// INCOME FLOW RULES
+// FLUJOS DE INGRESO
 const INCOME_FLOWS = [
-  { flowType: "SALARY", category: "Salary", keywords: ["nomina", "nómina", "pago nomina", "salario", "sueldo", "abono nomina"] },
-  { flowType: "PENSION", category: "Pension/Benefits", keywords: ["pension", "pensión", "jubilacion", "jubilación", "prestacion", "seg social", "seguridad social", "inss"] },
-  { flowType: "FREELANCE_INCOME", category: "Freelance Income", keywords: ["factura", "honorarios", "ingreso profesional", "autonomo", "autónomo"] },
-  { flowType: "RENTAL_INCOME", category: "Rental Income", keywords: ["alquiler recibido", "renta recibida", "ingreso alquiler", "arrendamiento"] },
-  { flowType: "TRANSFER_IN", category: "Transfer In", keywords: ["transferencia recibida", "transfer recibida", "ingreso transferencia", "traspaso recibido", "bizum recibido"] },
-  { flowType: "REFUND", category: "Refund", keywords: ["devolucion", "devolución", "reembolso", "anulacion", "anulación", "retrocesion"] },
-  { flowType: "INTEREST_EARNED", category: "Interest Earned", keywords: ["liquidacion intereses", "intereses abonados", "rendimiento", "interes cuenta", "remuneracion cuenta"] },
-  { flowType: "OTHER_INCOME", category: "Other Income", keywords: ["ingreso efectivo", "ingreso cheque", "dividendo", "premio"] },
+  { flowType: "NÓMINA", category: "Nómina", isRecurring: true, isFixed: true,
+    keywords: ["nomina", "nómina", "pago nomina", "salario", "sueldo", "abono nomina", "pago salario"] },
+  { flowType: "PENSIÓN", category: "Pensión/Prestación", isRecurring: true,
+    keywords: ["pension", "pensión", "jubilacion", "jubilación", "prestacion", "prestación", "seg social", "seguridad social", "inss", "desempleo", "paro", "sepe", "baja", "maternidad", "paternidad", "subsidio"] },
+  { flowType: "INGRESO_FREELANCE", category: "Ingreso Profesional",
+    keywords: ["factura", "honorarios", "ingreso profesional", "autonomo", "autónomo"] },
+  { flowType: "INGRESO_ALQUILER", category: "Ingreso Alquiler",
+    keywords: ["alquiler recibido", "renta recibida", "ingreso alquiler", "arrendamiento"] },
+  { flowType: "TRANSFERENCIA_RECIBIDA", category: "Transferencia Recibida",
+    keywords: ["transferencia recibida", "transfer recibida", "ingreso transferencia", "traspaso recibido", "bizum recibido", "ingreso bizum"] },
+  { flowType: "DEVOLUCIÓN", category: "Devolución",
+    keywords: ["devolucion", "devolución", "reembolso", "anulacion", "anulación", "retrocesion", "abono por", "rectificacion", "cashback"] },
+  { flowType: "INTERESES", category: "Intereses",
+    keywords: ["liquidacion intereses", "intereses abonados", "rendimiento", "interes cuenta", "remuneracion cuenta", "intereses"] },
+  { flowType: "OTRO_INGRESO", category: "Otro Ingreso",
+    keywords: ["ingreso efectivo", "ingreso cheque", "dividendo", "premio", "loteria", "lotería"] },
 ];
 
-// EXPENSE FLOW RULES
+// FLUJOS DE GASTO
 const EXPENSE_FLOWS = [
-  { flowType: "INTERNAL_TRANSFER", category: "Internal Transfer", keywords: ["traspaso entre cuentas", "traspaso propio", "traspaso a cuenta", "traspaso de cuenta"], isRecurring: false },
-  { flowType: "MORTGAGE", category: "Mortgage", keywords: ["hipoteca", "cuota hipoteca", "pago hipoteca", "amortizacion hipoteca"], isRecurring: true },
-  { flowType: "LOAN_PAYMENT", category: "Loan Payment", keywords: ["prestamo", "préstamo", "cuota prestamo", "amortizacion", "amortización", "pago prestamo", "credito personal", "crédito personal", "cofidis", "cetelem", "pepper", "sofinco", "creditea"], isRecurring: true },
-  { flowType: "CREDIT_CARD_PAYMENT", category: "Credit Card", keywords: ["pago tarjeta", "liquidacion tarjeta", "liquidación tarjeta", "extracto tarjeta", "cargo tarjeta"], isRecurring: false },
-  { flowType: "INSURANCE_PAYMENT", category: "Insurance", keywords: ["seguro", "prima seguro", "seguro hogar", "seguro coche", "seguro vida", "seguro salud", "mapfre", "linea directa", "generali", "axa", "allianz", "zurich", "pelayo", "reale", "mutua"], isRecurring: true },
-  { flowType: "TAX_PAYMENT", category: "Taxes", keywords: ["hacienda", "aeat", "agencia tributaria", "impuesto", "irpf", "iva", "ibi", "tasa", "modelo 303", "modelo 100", "recargo"] },
-  { flowType: "ATM_WITHDRAWAL", category: "Cash Withdrawal", keywords: ["retirada efectivo", "disposicion efectivo", "cajero", "atm", "reintegro"] },
-  { flowType: "BANK_FEES", category: "Bank Fees", keywords: ["comision", "comisión", "mantenimiento cuenta", "comision tarjeta", "gastos bancarios"] },
-  { flowType: "TRANSFER_OUT", category: "Transfer Out", keywords: ["transferencia emitida", "transfer enviada", "traspaso enviado", "bizum enviado", "bizum", "envio bizum"] },
+  { flowType: "TRASPASO_INTERNO", category: "Traspaso Interno", isRecurring: false, isFixed: false,
+    keywords: ["traspaso entre cuentas", "traspaso propio", "traspaso a cuenta", "traspaso de cuenta", "ahorro programado"] },
+  { flowType: "HIPOTECA", category: "Hipoteca", isRecurring: true, isFixed: true,
+    keywords: ["hipoteca", "cuota hipoteca", "pago hipoteca", "amortizacion hipoteca", "amortización hipoteca"] },
+  { flowType: "PRÉSTAMO", category: "Préstamo", isRecurring: true, isFixed: true,
+    keywords: ["prestamo", "préstamo", "cuota prestamo", "amortizacion", "amortización", "pago prestamo", "credito personal", "crédito personal", "cofidis", "cetelem", "pepper", "sofinco", "creditea", "vivus", "moneyman", "zaplo"] },
+  { flowType: "PAGO_TARJETA", category: "Pago Tarjeta Crédito", isRecurring: true, isFixed: false,
+    keywords: ["pago tarjeta", "liquidacion tarjeta", "liquidación tarjeta", "extracto tarjeta", "cargo tarjeta"] },
+  { flowType: "SEGUROS", category: "Seguros", isRecurring: true, isFixed: true,
+    keywords: ["seguro", "prima seguro", "mapfre", "linea directa", "generali", "axa", "allianz", "zurich", "pelayo", "reale", "mutua", "adeslas", "sanitas", "asisa", "dkv"] },
+  { flowType: "IMPUESTOS", category: "Impuestos/Tasas",
+    keywords: ["hacienda", "aeat", "agencia tributaria", "impuesto", "irpf", "iva", "ibi", "tasa", "modelo", "recargo", "multa", "ayuntamiento"] },
+  { flowType: "CAJERO", category: "Efectivo",
+    keywords: ["retirada efectivo", "disposicion efectivo", "cajero", "atm", "reintegro"] },
+  { flowType: "TRANSFERENCIA_ENVIADA", category: "Transferencia Enviada",
+    keywords: ["transferencia emitida", "transfer enviada", "traspaso enviado", "bizum enviado", "bizum", "envio bizum"] },
+  { flowType: "COMISIONES", category: "Comisiones Bancarias",
+    keywords: ["comision", "comisión", "mantenimiento cuenta", "comision tarjeta", "gastos bancarios", "servicio"] },
 ];
 
-// EXPENSE SUB-CLASSIFICATION (for card purchases, recibos, etc.)
+// SUBCATEGORÍAS DE GASTO (para compras con tarjeta y recibos)
 const EXPENSE_SUBCATEGORIES = [
-  { category: "Groceries", keywords: ["mercadona", "lidl", "carrefour", "aldi", "eroski", "dia %", "alcampo", "hipercor", "ahorramas", "consum", "caprabo", "simply", "bonarea", "gadis", "coviran", "supermercado", "alimentacion", "alimentación"] },
-  { category: "Dining Out", keywords: ["restaurante", "restaurant", "cafe", "cafeteria", "bar ", "starbucks", "mcdonald", "burger", "pizza", "glovo", "uber eats", "just eat", "deliveroo", "telepizza", "dominos", "100montaditos", "vips", "goiko", "lateral", "tgb", "foster", "asador", "marisqueria", "cerveceria", "taberna"] },
-  { category: "Housing", keywords: ["alquiler", "comunidad", "comunidad propietarios", "finca", "inmobiliaria"] },
-  { category: "Utilities", keywords: ["endesa", "iberdrola", "naturgy", "movistar", "vodafone", "orange", "telefonica", "yoigo", "masmovil", "o2", "digi", "pepephone", "lowi", "simyo", "agua", "canal isabel", "luz", "gas natural", "fibra", "internet", "electricidad"] },
-  { category: "Subscriptions", keywords: ["netflix", "spotify", "hbo", "disney", "amazon prime", "gym", "apple", "youtube premium", "dazn", "crunchyroll", "audible", "notion", "chatgpt", "openai", "adobe", "microsoft 365", "icloud", "playstation", "xbox", "nintendo", "patreon", "substack", "medium", "tidal", "paramount"] },
-  { category: "Shopping", keywords: ["amazon", "aliexpress", "zara", "el corte ingles", "primark", "ikea", "decathlon", "mediamarkt", "fnac", "leroy merlin", "shein", "temu", "wallapop", "bershka", "mango", "pull bear", "massimo dutti", "uniqlo", "h&m", "pccomponentes", "worten", "bricolaje", "tienda"] },
-  { category: "Transport", keywords: ["gasolina", "gasolinera", "repsol", "cepsa", "bp", "shell", "taxi", "uber", "cabify", "bolt", "freenow", "metro", "bus", "emt", "renfe", "parking", "parquimetro", "peaje", "autopista", "alsa", "avanza", "blablacar", "acciona", "tier", "lime", "patinete"] },
-  { category: "Health", keywords: ["farmacia", "doctor", "hospital", "dentista", "clinica", "adeslas", "sanitas", "asisa", "dkv", "optica", "óptica", "fisioterapia", "fisio", "psicologo", "psicólogo", "veterinario", "laboratorio"] },
-  { category: "Education", keywords: ["udemy", "coursera", "academia", "colegio", "guarderia", "universidad", "formacion", "formación", "masterclass", "libro", "libreria", "casa del libro"] },
-  { category: "Entertainment", keywords: ["cine", "teatro", "concierto", "festival", "museo", "parque atracciones", "zoo", "acuario", "steam", "playstation store", "xbox store", "ticketmaster", "entradas", "ocio", "bowling", "karaoke", "escape room"] },
-  { category: "Children", keywords: ["juguete", "toys r us", "prenatal", "pañales", "bebe", "bebé", "mothercare", "imaginarium", "guardería"] },
-  { category: "Travel", keywords: ["hotel", "vuelo", "flight", "airbnb", "booking", "ryanair", "iberia", "vueling", "easyjet", "expedia", "kayak", "skyscanner", "maleta", "alojamiento", "hostal", "parador", "rentalcars", "sixt", "europcar", "avis"] },
-  { category: "Personal Care", keywords: ["peluqueria", "peluquería", "barberia", "barbería", "estetica", "estética", "cosmetica", "cosmética", "sephora", "druni", "primor", "rituals", "perfumeria", "manicura", "spa", "masaje"] },
+  { category: "Supermercado", isRecurring: false, keywords: ["mercadona", "lidl", "carrefour", "aldi", "eroski", "dia", "alcampo", "hipercor", "ahorramas", "consum", "caprabo", "simply", "bonarea", "gadis", "coviran", "supermercado", "alimentacion", "alimentación", "frutas", "fruteria", "carniceria", "pescaderia", "panaderia"] },
+  { category: "Restaurantes", isRecurring: false, keywords: ["restaurante", "cafe", "cafeteria", "starbucks", "mcdonald", "burger", "pizza", "glovo", "uber eats", "just eat", "deliveroo", "telepizza", "dominos", "100montaditos", "vips", "goiko", "lateral", "foster", "asador", "marisqueria", "cerveceria", "taberna", "kebab", "sushi"] },
+  { category: "Suministros", isRecurring: true, isFixed: true, keywords: ["endesa", "iberdrola", "naturgy", "movistar", "vodafone", "orange", "telefonica", "yoigo", "masmovil", "o2", "digi", "pepephone", "lowi", "simyo", "agua", "canal isabel", "canal de isabel", "luz", "gas natural", "fibra", "internet", "electricidad", "telefono"] },
+  { category: "Suscripciones", isRecurring: true, keywords: ["netflix", "spotify", "hbo", "disney", "amazon prime", "gym", "apple", "youtube premium", "dazn", "crunchyroll", "audible", "chatgpt", "openai", "adobe", "microsoft 365", "icloud", "playstation", "xbox", "nintendo", "patreon", "substack", "medium", "tidal", "paramount", "gimnasio"] },
+  { category: "Compras", isRecurring: false, keywords: ["amazon", "aliexpress", "zara", "el corte ingles", "primark", "ikea", "decathlon", "mediamarkt", "fnac", "leroy merlin", "shein", "temu", "wallapop", "bershka", "mango", "pull bear", "massimo dutti", "uniqlo", "h&m", "pccomponentes", "worten"] },
+  { category: "Transporte", isRecurring: false, keywords: ["gasolina", "gasolinera", "repsol", "cepsa", "bp", "shell", "taxi", "uber", "cabify", "bolt", "freenow", "metro", "bus", "emt", "renfe", "parking", "parquimetro", "peaje", "autopista", "alsa", "avanza", "blablacar", "itv", "taller", "mecanico", "neumaticos"] },
+  { category: "Salud", isRecurring: false, keywords: ["farmacia", "doctor", "hospital", "dentista", "clinica", "optica", "óptica", "fisioterapia", "fisio", "psicologo", "psicólogo", "veterinario", "laboratorio", "radiologia", "pediatra", "ginecologo", "vacuna", "analisis"] },
+  { category: "Educación Hija", isRecurring: true, isFixed: true, keywords: ["guarderia", "guardería", "colegio", "escuela infantil", "matricula", "matrícula", "cuota escolar", "ampa", "extraescolar", "campamento", "juguete", "toys", "prenatal", "pañales", "bebe", "bebé", "mothercare", "imaginarium", "dodot", "hero baby"] },
+  { category: "Ocio", isRecurring: false, keywords: ["cine", "teatro", "concierto", "festival", "museo", "parque", "zoo", "acuario", "steam", "ticketmaster", "entradas", "bowling", "karaoke", "escape room", "parque atracciones"] },
+  { category: "Viajes", isRecurring: false, keywords: ["hotel", "vuelo", "airbnb", "booking", "ryanair", "iberia", "vueling", "easyjet", "expedia", "maleta", "alojamiento", "hostal", "parador", "casa rural", "camping", "rentalcars", "sixt", "europcar"] },
+  { category: "Cuidado Personal", isRecurring: false, keywords: ["peluqueria", "peluquería", "barberia", "barbería", "estetica", "estética", "cosmetica", "cosmética", "sephora", "druni", "primor", "rituals", "perfumeria", "manicura", "spa", "masaje"] },
+  { category: "Hogar", isRecurring: false, keywords: ["bricomart", "conforama", "colchon", "mueble", "ferreteria", "jardineria", "pintura", "limpieza", "cerrajero", "fontanero", "electricista", "reparacion hogar"] },
+  { category: "Regalos/Varios", isRecurring: false, keywords: ["regalo", "flores", "floristeria", "joyeria", "relojeria", "papeleria", "bazar"] },
+  { category: "Vivienda", isRecurring: true, isFixed: true, keywords: ["alquiler", "comunidad propietarios", "finca", "inmobiliaria", "portero"] },
 ];
 
 export function classifyTransaction(description, direction) {
-  const flows = direction === "income" ? INCOME_FLOWS : EXPENSE_FLOWS;
-  
+  const flows = direction === "ingreso" ? INCOME_FLOWS : EXPENSE_FLOWS;
+
   for (const rule of flows) {
     if (matchesAny(description, rule.keywords)) {
       return {
         flowType: rule.flowType,
         category: rule.category,
         isRecurring: rule.isRecurring || false,
+        isFixed: rule.isFixed || false,
       };
     }
   }
 
-  // For expenses, try sub-classification (card purchases, recibos)
-  if (direction === "expense") {
-    // Check for recibo/domiciliacion/compra patterns
+  if (direction === "gasto") {
     const isCardOrRecibo = matchesAny(description, [
-      "recibo", "domiciliacion", "domiciliación", "adeudo",
-      "compra tarjeta", "pago con tarjeta", "compra en", "pago en", "tpv", "contactless",
-      "visa", "mastercard"
+      "recibo", "domiciliacion", "domiciliación", "adeudo", "cargo recibo",
+      "compra tarjeta", "pago con tarjeta", "compra en", "pago en", "tpv", "contactless", "sin contacto"
     ]);
 
     for (const sub of EXPENSE_SUBCATEGORIES) {
       if (matchesAny(description, sub.keywords)) {
         return {
-          flowType: isCardOrRecibo ? "CARD_PURCHASE" : "DIRECT_DEBIT",
+          flowType: isCardOrRecibo ? "COMPRA_TARJETA" : "RECIBO_DOMICILIADO",
           category: sub.category,
-          isRecurring: ["Utilities", "Subscriptions", "Housing"].includes(sub.category),
+          isRecurring: sub.isRecurring || false,
+          isFixed: sub.isFixed || false,
         };
       }
     }
 
     if (isCardOrRecibo) {
-      return { flowType: "CARD_PURCHASE", category: "Uncategorized", isRecurring: false };
+      return { flowType: "COMPRA_TARJETA", category: "Sin Clasificar", isRecurring: false, isFixed: false };
     }
   }
 
-  return {
-    flowType: "UNKNOWN",
-    category: "Uncategorized",
-    isRecurring: false,
-  };
+  return { flowType: "DESCONOCIDO", category: "Sin Clasificar", isRecurring: false, isFixed: false };
 }
 
-// Detect recurring by scanning for similar descriptions appearing 2+ times
 export function detectRecurring(transactions) {
   const descCounts = {};
   transactions.forEach(t => {
     const key = t.description.toLowerCase().substring(0, 30);
     descCounts[key] = (descCounts[key] || 0) + 1;
   });
-
   transactions.forEach(t => {
     const key = t.description.toLowerCase().substring(0, 30);
-    if (descCounts[key] >= 2) {
-      t.is_recurring = true;
-    }
+    if (descCounts[key] >= 2) t.is_recurring = true;
   });
 }
 
-// Detect salary from transactions
 export function detectSalaries(transactions) {
   const salaryTxns = transactions.filter(t =>
-    t.direction === "income" && t.category === "Salary"
+    t.direction === "ingreso" && t.category === "Nómina"
   );
-
   if (salaryTxns.length === 0) return [];
 
-  // Group by similar amounts (±10%)
   const groups = [];
   for (const txn of salaryTxns) {
     let matched = false;
     for (const group of groups) {
       const avg = group.reduce((s, t) => s + t.amount, 0) / group.length;
-      if (Math.abs(txn.amount - avg) / avg <= 0.1) {
-        group.push(txn);
-        matched = true;
-        break;
-      }
+      if (Math.abs(txn.amount - avg) / avg <= 0.1) { group.push(txn); matched = true; break; }
     }
     if (!matched) groups.push([txn]);
   }
-
-  return groups.map(group => ({
-    amount: Math.round(group.reduce((s, t) => s + t.amount, 0) / group.length * 100) / 100,
-    count: group.length,
-    description: group[0].description,
+  return groups.map(g => ({
+    amount: Math.round(g.reduce((s, t) => s + t.amount, 0) / g.length * 100) / 100,
+    count: g.length,
+    description: g[0].description,
   }));
 }

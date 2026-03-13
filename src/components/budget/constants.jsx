@@ -1,4 +1,4 @@
-// Format EUR in Spanish locale
+// Formatea EUR en locale español
 export function formatEUR(amount) {
   if (amount == null || isNaN(amount)) return "0,00 €";
   return new Intl.NumberFormat("es-ES", {
@@ -8,66 +8,68 @@ export function formatEUR(amount) {
   }).format(amount);
 }
 
-// Format percentage
 export function formatPct(value) {
   if (value == null || isNaN(value)) return "0%";
   return `${value.toFixed(1)}%`;
 }
 
-// Category config: color + icon
+// Configuración de categorías: color + icono
 export const CATEGORY_CONFIG = {
-  "Groceries":        { color: "#4ade80", icon: "🛒" },
-  "Dining Out":       { color: "#fb923c", icon: "🍽️" },
-  "Housing":          { color: "#60a5fa", icon: "🏠" },
-  "Utilities":        { color: "#a78bfa", icon: "⚡" },
-  "Subscriptions":    { color: "#f472b6", icon: "📺" },
-  "Shopping":         { color: "#fbbf24", icon: "🛍️" },
-  "Transport":        { color: "#2dd4bf", icon: "🚗" },
-  "Health":           { color: "#f87171", icon: "💊" },
-  "Education":        { color: "#818cf8", icon: "📚" },
-  "Entertainment":    { color: "#e879f9", icon: "🎭" },
-  "Children":         { color: "#fca5a1", icon: "👶" },
-  "Travel":           { color: "#38bdf8", icon: "✈️" },
-  "Personal Care":    { color: "#fb7185", icon: "💇" },
-  "Insurance":        { color: "#c084fc", icon: "🛡️" },
-  "Taxes":            { color: "#cbd5e1", icon: "📋" },
-  "Salary":           { color: "#22c55e", icon: "💵" },
-  "Pension/Benefits": { color: "#86efac", icon: "🏛️" },
-  "Freelance Income": { color: "#a3e635", icon: "💼" },
-  "Rental Income":    { color: "#fde047", icon: "🔑" },
-  "Loan Payment":     { color: "#ef4444", icon: "🏦" },
-  "Mortgage":         { color: "#dc2626", icon: "🏠" },
-  "Credit Card":      { color: "#f97316", icon: "💳" },
-  "Bank Fees":        { color: "#9ca3af", icon: "🏧" },
-  "Cash Withdrawal":  { color: "#78716c", icon: "💶" },
-  "Transfer In":      { color: "#6ee7b7", icon: "📥" },
-  "Transfer Out":     { color: "#fdba74", icon: "📤" },
-  "Internal Transfer":{ color: "#475569", icon: "↔️" },
-  "Refund":           { color: "#a7f3d0", icon: "↩️" },
-  "Interest Earned":  { color: "#bef264", icon: "📊" },
-  "Other Income":     { color: "#a3e635", icon: "📦" },
-  "Uncategorized":    { color: "#fde047", icon: "❓" },
+  "Supermercado":          { color: "#4ade80", icon: "🛒" },
+  "Restaurantes":          { color: "#fb923c", icon: "🍽️" },
+  "Vivienda":              { color: "#60a5fa", icon: "🏠" },
+  "Suministros":           { color: "#a78bfa", icon: "⚡" },
+  "Suscripciones":         { color: "#f472b6", icon: "📺" },
+  "Compras":               { color: "#fbbf24", icon: "🛍️" },
+  "Transporte":            { color: "#2dd4bf", icon: "🚗" },
+  "Salud":                 { color: "#f87171", icon: "💊" },
+  "Educación Hija":        { color: "#fca5a1", icon: "👶" },
+  "Ocio":                  { color: "#e879f9", icon: "🎭" },
+  "Viajes":                { color: "#38bdf8", icon: "✈️" },
+  "Cuidado Personal":      { color: "#fb7185", icon: "💇" },
+  "Seguros":               { color: "#c084fc", icon: "🛡️" },
+  "Impuestos/Tasas":       { color: "#cbd5e1", icon: "📋" },
+  "Regalos/Varios":        { color: "#fdba74", icon: "🎁" },
+  "Hogar":                 { color: "#a3e635", icon: "🔧" },
+  "Nómina":                { color: "#22c55e", icon: "💵" },
+  "Pensión/Prestación":    { color: "#86efac", icon: "🏛️" },
+  "Ingreso Profesional":   { color: "#a3e635", icon: "💼" },
+  "Ingreso Alquiler":      { color: "#fde047", icon: "🔑" },
+  "Hipoteca":              { color: "#dc2626", icon: "🏠" },
+  "Préstamo":              { color: "#ef4444", icon: "🏦" },
+  "Pago Tarjeta Crédito":  { color: "#f97316", icon: "💳" },
+  "Comisiones Bancarias":  { color: "#9ca3af", icon: "🏧" },
+  "Efectivo":              { color: "#78716c", icon: "💶" },
+  "Transferencia Recibida":{ color: "#6ee7b7", icon: "📥" },
+  "Transferencia Enviada": { color: "#fdba74", icon: "📤" },
+  "Traspaso Interno":      { color: "#475569", icon: "↔️" },
+  "Devolución":            { color: "#a7f3d0", icon: "↩️" },
+  "Intereses":             { color: "#bef264", icon: "📊" },
+  "Otro Ingreso":          { color: "#a3e635", icon: "📦" },
+  "Sin Clasificar":        { color: "#fde047", icon: "❓" },
 };
 
 export const ALL_CATEGORIES = Object.keys(CATEGORY_CONFIG);
 
-// Needs categories for 50/30/20
-export const NEEDS_CATEGORIES = [
-  "Housing", "Mortgage", "Utilities", "Groceries", "Transport",
-  "Insurance", "Health", "Taxes", "Loan Payment", "Children"
+// Categorías para la regla 50/30/20
+export const NECESIDADES_CATEGORIAS = [
+  "Vivienda", "Hipoteca", "Suministros", "Supermercado", "Transporte",
+  "Seguros", "Salud", "Impuestos/Tasas", "Préstamo", "Educación Hija"
 ];
 
-export const WANTS_CATEGORIES = [
-  "Dining Out", "Shopping", "Subscriptions", "Entertainment",
-  "Personal Care", "Travel", "Education"
+export const DESEOS_CATEGORIAS = [
+  "Restaurantes", "Compras", "Suscripciones", "Ocio",
+  "Cuidado Personal", "Viajes", "Regalos/Varios", "Hogar"
 ];
 
-export const FIXED_CATEGORIES = [
-  "Mortgage", "Housing", "Loan Payment", "Credit Card",
-  "Insurance", "Utilities"
+export const GASTOS_FIJOS_CATEGORIAS = [
+  "Hipoteca", "Vivienda", "Préstamo", "Pago Tarjeta Crédito",
+  "Seguros", "Suministros", "Educación Hija"
 ];
 
-export const INCOME_CATEGORIES = [
-  "Salary", "Pension/Benefits", "Freelance Income", "Rental Income",
-  "Transfer In", "Refund", "Interest Earned", "Other Income"
+export const INGRESO_CATEGORIAS = [
+  "Nómina", "Pensión/Prestación", "Ingreso Profesional", "Ingreso Alquiler",
+  "Transferencia Recibida", "Devolución", "Intereses", "Otro Ingreso"
 ];
+
+export const DEUDA_CATEGORIAS = ["Préstamo", "Hipoteca", "Pago Tarjeta Crédito"];
