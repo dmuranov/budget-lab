@@ -54,6 +54,12 @@ export default function Panel() {
     );
   }
 
+  const { data: allTxns = [] } = useQuery({
+    queryKey: ["all-transactions-pattern"],
+    queryFn: () => base44.entities.Transaction.list("date", 10000),
+    staleTime: 10 * 60 * 1000,
+  });
+
   const activeBudget = budgets.find(b => b.id === activeId);
   const savingsColor = savingsRate >= 20 ? "#4ade80" : savingsRate >= 10 ? "#fbbf24" : "#f87171";
   const panelTitle = showingTodos ? "Resumen Total" : activeBudget ? formatMonthES(activeBudget.month) : "";
