@@ -28,16 +28,12 @@ const INCOME_FLOWS = [
     keywords: ["ingreso efectivo", "ingreso cheque", "dividendo", "premio", "loteria", "lotería"] },
 ];
 
-// FLUJOS DE GASTO
+// FLUJOS DE GASTO GENÉRICOS (hipoteca, traspaso, comisiones, etc.)
 const EXPENSE_FLOWS = [
   { flowType: "TRASPASO_INTERNO", category: "Traspaso Interno", isRecurring: false, isFixed: false,
     keywords: ["traspaso entre cuentas", "traspaso propio", "traspaso a cuenta", "traspaso de cuenta", "ahorro programado"] },
   { flowType: "HIPOTECA", category: "Hipoteca", isRecurring: true, isFixed: true,
-    keywords: ["hipoteca", "cuota hipoteca", "pago hipoteca", "amortizacion hipoteca", "amortización hipoteca", "cuota hipoteca"] },
-  { flowType: "PRÉSTAMO", category: "Préstamo", isRecurring: true, isFixed: true,
-    keywords: ["prestamo", "préstamo", "cuota prestamo", "amortizacion", "amortización", "pago prestamo", "credito personal", "crédito personal", "cofidis", "cetelem", "pepper", "sofinco", "creditea", "vivus", "moneyman", "zaplo"] },
-  { flowType: "PAGO_TARJETA", category: "Pago Tarjeta Crédito", isRecurring: true, isFixed: false,
-    keywords: ["pago tarjeta", "liquidacion tarjeta", "liquidación tarjeta", "extracto tarjeta", "cargo tarjeta"] },
+    keywords: ["hipoteca", "cuota hipoteca", "pago hipoteca", "amortizacion hipoteca", "amortización hipoteca"] },
   { flowType: "SEGUROS", category: "Seguros", isRecurring: true, isFixed: true,
     keywords: ["seguro", "prima seguro", "mapfre", "linea directa", "generali", "axa", "allianz", "zurich", "pelayo", "reale", "mutua", "adeslas", "sanitas", "asisa", "dkv"] },
   { flowType: "IMPUESTOS", category: "Impuestos/Tasas",
@@ -50,22 +46,32 @@ const EXPENSE_FLOWS = [
     keywords: ["comision", "comisión", "mantenimiento cuenta", "comision tarjeta", "gastos bancarios", "servicio"] },
 ];
 
-// PRIORIDAD 1: Detección geográfica Bosnia/Croacia → "Padres de Danijel"
+// Detección geográfica Bosnia/Croacia
 const BOSNIA_CROATIA_KEYWORDS = [
   "sarajevo", "mostar", "tuzla", "banja luka", "zenica", "bihac", "brcko", "travnik", "livno",
   "bosnia", "herzegovina", "bih",
   "zagreb", "split", "dubrovnik", "rijeka", "zadar", "osijek", "pula", "sibenik",
   "croatia", "croacia", "hrvatska",
   "konzum", "bingo", "mercator", "dm drogerie", "muller", "spar croatia", "plodine", "tommy",
-  "studenac", "tisak", "ina", "petrol", "hep", "bh telecom", "ht eronet", "m:tel", "a1 hrvatska"
+  "studenac", "tisak", "ina ", "petrol",
+  "hep", "bh telecom", "ht eronet", "m:tel", "a1 hrvatska",
+  "spar hr", "lidl hr", "kaufland hr",
+  "bam", "hrk", "kn "
 ];
 
-// PRIORIDAD 2: Apuestas/Juego
+// Apuestas/Juego
 const GAMBLING_KEYWORDS = [
   "bet365", "betfair", "codere", "luckia", "sportium", "bwin", "pokerstars", "888",
   "william hill", "betway", "marathon", "pinnacle", "winamax", "zebet", "casino",
   "apuesta", "apuestas", "loteria", "loterías", "once", "primitiva", "euromillones",
   "bonoloto", "quiniela", "kirolbet", "paf", "juegging", "retabet", "marca apuestas"
+];
+
+// Productos financieros que NUNCA deben clasificarse como Bosnia/Croacia
+const FINANCIAL_PRODUCT_KEYWORDS = [
+  "cofidis", "cetelem", "pepper", "sofinco", "creditea", "vivus", "moneyman", "zaplo",
+  "carrefour pass", "pass carrefour", "pago tarj carrefour", "tarjeta carrefour",
+  "liquidacion tarjeta", "liquidación tarjeta", "pago tarjeta", "extracto tarjeta", "cargo tarjeta"
 ];
 
 // SUBCATEGORÍAS DE GASTO (para compras con tarjeta y recibos)
@@ -87,18 +93,39 @@ const EXPENSE_SUBCATEGORIES = [
 ];
 
 export function classifyTransaction(description, direction) {
-  // PRIORIDAD MÁXIMA: Bosnia/Croacia → Padres de Danijel (antes que cualquier otra regla)
-  if (direction === "gasto" && matchesAny(description, BOSNIA_CROATIA_KEYWORDS)) {
-    return { flowType: "GASTO_FAMILIA_BOSNIA", category: "Padres de Danijel", isRecurring: false, isFixed: false };
+  // PASO 1: Revolut → siempre Traspaso Interno
+  if (matchesAny(description, ["revolut"])) {
+    return { flowType: "TRASPASO_INTERNO", category: "Traspaso Interno", isRecurring: false, isFixed: false };
   }
 
-  // PRIORIDAD 2: Apuestas/Juego
-  if (direction === "gasto" && matchesAny(description, GAMBLING_KEYWORDS)) {
-    return { flowType: "APUESTAS", category: "Apuestas/Juego", isRecurring: false, isFixed: false };
+  if (direction === "gasto") {
+    // PASO 2a: Préstamos conocidos
+    if (matchesAny(description, ["cofidis", "cetelem", "pepper", "sofinco", "creditea", "vivus", "moneyman", "zaplo",
+        "cuota prestamo", "cuota préstamo", "pago prestamo", "pago préstamo", "amortizacion", "amortización",
+        "credito personal", "crédito personal", "prestamo personal"])) {
+      return { flowType: "PRÉSTAMO", category: "Préstamo", isRecurring: true, isFixed: true };
+    }
+
+    // PASO 2b: Pago tarjeta de crédito (Carrefour Pass, liquidaciones, etc.)
+    if (matchesAny(description, ["carrefour pass", "pass carrefour", "pago tarj carrefour", "tarjeta carrefour",
+        "liquidacion tarjeta", "liquidación tarjeta", "pago tarjeta", "extracto tarjeta", "cargo tarjeta"])) {
+      return { flowType: "PAGO_TARJETA", category: "Pago Tarjeta Crédito", isRecurring: true, isFixed: true };
+    }
+
+    // PASO 3: Bosnia/Croacia → Padres de Danijel (solo si NO es producto financiero)
+    const esFinanciero = matchesAny(description, FINANCIAL_PRODUCT_KEYWORDS);
+    if (!esFinanciero && matchesAny(description, BOSNIA_CROATIA_KEYWORDS)) {
+      return { flowType: "GASTO_FAMILIA_BOSNIA", category: "Padres de Danijel", isRecurring: false, isFixed: false };
+    }
+
+    // PASO 4: Apuestas/Juego
+    if (matchesAny(description, GAMBLING_KEYWORDS)) {
+      return { flowType: "APUESTAS", category: "Apuestas/Juego", isRecurring: false, isFixed: false };
+    }
   }
 
+  // PASO 5: Flujos genéricos (hipoteca, traspasos, comisiones, ingresos...)
   const flows = direction === "ingreso" ? INCOME_FLOWS : EXPENSE_FLOWS;
-
   for (const rule of flows) {
     if (matchesAny(description, rule.keywords)) {
       return {
