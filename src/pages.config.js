@@ -47,8 +47,38 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import AIAdvisor from './pages/AIAdvisor';
+import AsesorIA from './pages/AsesorIA';
+import Configuracion from './pages/Configuracion';
+import Dashboard from './pages/Dashboard';
+import Goals from './pages/Goals';
+import Metas from './pages/Metas';
+import Movimientos from './pages/Movimientos';
+import NetWorth from './pages/NetWorth';
+import Panel from './pages/Panel';
+import Patrimonio from './pages/Patrimonio';
+import Presupuesto from './pages/Presupuesto';
+import Setup from './pages/Setup';
+import Transactions from './pages/Transactions';
 
-export const pagesConfig = {
-	Pages: {}
+
+export const PAGES = {
+    "AIAdvisor": AIAdvisor,
+    "AsesorIA": AsesorIA,
+    "Configuracion": Configuracion,
+    "Dashboard": Dashboard,
+    "Goals": Goals,
+    "Metas": Metas,
+    "Movimientos": Movimientos,
+    "NetWorth": NetWorth,
+    "Panel": Panel,
+    "Patrimonio": Patrimonio,
+    "Presupuesto": Presupuesto,
+    "Setup": Setup,
+    "Transactions": Transactions,
 }
 
+export const pagesConfig = {
+    mainPage: "Setup",
+    Pages: PAGES,
+};

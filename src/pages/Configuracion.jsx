@@ -30,20 +30,19 @@ export default function Configuracion() {
   const sinClasificar = transactions.filter(t => t.category === "Sin Clasificar");
 
   const handleReclasificar = async () => {
-    if (!activeBudgetId) return;
     setReclasificando(true);
     setReclasificadoCount(null);
 
-    // Obtener todos los movimientos del presupuesto
-    const allTxns = await base44.entities.Transaction.filter({ budget_id: activeBudgetId }, "date", 5000);
+    // Obtener TODOS los movimientos de la base de datos (sin filtro de presupuesto)
+    const allTxns = await base44.entities.Transaction.list("date", 5000);
     let count = 0;
 
-    // Procesar en batches de 10
-    for (let i = 0; i < allTxns.length; i += 10) {
-      const batch = allTxns.slice(i, i + 10);
+    // Procesar en batches de 20
+    for (let i = 0; i < allTxns.length; i += 20) {
+      const batch = allTxns.slice(i, i + 20);
       await Promise.all(batch.map(async (t) => {
         const { flowType, category, isRecurring, isFixed } = classifyTransaction(t.description, t.direction);
-        if (category !== t.category || isRecurring !== t.is_recurring || isFixed !== t.is_fixed) {
+        if (category !== t.category || flowType !== t.flow_type || isRecurring !== t.is_recurring || isFixed !== t.is_fixed) {
           await base44.entities.Transaction.update(t.id, {
             category,
             flow_type: flowType,
