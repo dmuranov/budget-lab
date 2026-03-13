@@ -1,14 +1,12 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeftRight, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowLeftRight, ArrowUp, ArrowDown, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search } from "lucide-react";
 import { formatEUR, ALL_CATEGORIES, CATEGORY_CONFIG } from "../components/budget/constants";
 import BudgetSelector, { formatMonthES } from "../components/budget/BudgetSelector";
 import { useSelectedBudget } from "../components/budget/SelectedBudgetContext";
-import { useQuery as useQueryBudgets } from "@tanstack/react-query";
 
 const PESTAÑAS = [
   { id: "todos", label: "Todos" },
