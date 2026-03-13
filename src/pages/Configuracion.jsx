@@ -65,9 +65,10 @@ export default function Configuracion() {
 
     if (stillUnclassified.length > 0) {
       setReclasificadoCount(count); // progreso parcial
+      const apiKey = getSetting("claude_api_key");
       for (let i = 0; i < stillUnclassified.length; i += 30) {
         const batch = stillUnclassified.slice(i, i + 30);
-        const aiCategories = await classifyWithAI(batch, base44);
+        const aiCategories = await classifyWithAI(batch, base44, apiKey);
         await Promise.all(batch.map(async (t, idx) => {
           if (aiCategories[idx] && aiCategories[idx] !== "Sin Clasificar" && aiCategories[idx] !== t.category) {
             await base44.entities.Transaction.update(t.id, { category: aiCategories[idx] });
