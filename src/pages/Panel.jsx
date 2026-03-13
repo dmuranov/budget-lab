@@ -103,6 +103,13 @@ export default function Panel() {
               subtitle={savingsRate >= 20 ? "¡En buen camino!" : "Objetivo: ≥20%"} />
           </div>
 
+          {/* Banner nómina */}
+          <BannerNomina
+            allTransactions={allTxns}
+            currentMonthTransactions={transactions}
+            budgetMonth={activeBudget?.month}
+          />
+
           {/* Fila 2: Ingresos + Fijos */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <DesglosIngresos incomeByCategory={incomeByCategory} budget={budget} />
