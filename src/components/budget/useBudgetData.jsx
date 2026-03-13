@@ -18,7 +18,13 @@ export function useBudgetData(budgetId) {
   });
 
   const budget = budgetQuery.data?.[0] || null;
-  const transactions = txQuery.data || [];
+  const allTransactions = txQuery.data || [];
+
+  // Filtrar por el mes del presupuesto (fecha YYYY-MM-DD que empieza con YYYY-MM)
+  const budgetMonth = budget?.month; // "2026-03"
+  const transactions = budgetMonth
+    ? allTransactions.filter(t => t.date && t.date.startsWith(budgetMonth))
+    : allTransactions;
 
   const income = transactions.filter(t => t.direction === "ingreso" && t.category !== "Traspaso Interno");
   const expenses = transactions.filter(t => t.direction === "gasto" && t.category !== "Traspaso Interno");
