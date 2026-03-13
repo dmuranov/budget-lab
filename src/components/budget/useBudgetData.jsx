@@ -7,12 +7,14 @@ export function useBudgetData(budgetId) {
     queryKey: ["budget", budgetId],
     queryFn: () => budgetId ? base44.entities.MonthlyBudget.filter({ id: budgetId }) : Promise.resolve([]),
     enabled: !!budgetId,
+    staleTime: 0,
   });
 
   const txQuery = useQuery({
     queryKey: ["transactions", budgetId],
     queryFn: () => budgetId ? base44.entities.Transaction.filter({ budget_id: budgetId }, "date", 5000) : Promise.resolve([]),
     enabled: !!budgetId,
+    staleTime: 0,
   });
 
   const budget = budgetQuery.data?.[0] || null;
