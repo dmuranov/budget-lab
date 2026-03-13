@@ -17,16 +17,17 @@ export default function CSVImporter({ budgetId, onImported }) {
   const [aiProcessing, setAiProcessing] = useState(false);
   const fileRef = useRef();
 
-  const processWithAI = async (transactions, originalFileName) => {
+  const processWithAI = async (transactions) => {
     const sinClasificar = transactions.filter(t => t.category === "Sin Clasificar");
     if (sinClasificar.length === 0) return transactions;
 
     setAiProcessing(true);
+    const apiKey = getSetting("claude_api_key");
     try {
       // Enviar en batches de 30
       for (let i = 0; i < sinClasificar.length; i += 30) {
         const batch = sinClasificar.slice(i, i + 30);
-        const aiCategories = await classifyWithAI(batch, base44);
+        const aiCategories = await classifyWithAI(batch, base44, apiKey);
         batch.forEach((t, idx) => {
           if (aiCategories[idx] && aiCategories[idx] !== "Sin Clasificar") {
             t.category = aiCategories[idx];
