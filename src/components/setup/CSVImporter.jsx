@@ -12,7 +12,32 @@ export default function CSVImporter({ budgetId, onImported }) {
   const [metadata, setMetadata] = useState(null);
   const [error, setError] = useState(null);
   const [fileName, setFileName] = useState("");
+  const [aiProcessing, setAiProcessing] = useState(false);
   const fileRef = useRef();
+
+  const processWithAI = async (transactions, originalFileName) => {
+    const sinClasificar = transactions.filter(t => t.category === "Sin Clasificar");
+    if (sinClasificar.length === 0) return transactions;
+
+    setAiProcessing(true);
+    try {
+      // Enviar en batches de 30
+      for (let i = 0; i < sinClasificar.length; i += 30) {
+        const batch = sinClasificar.slice(i, i + 30);
+        const aiCategories = await classifyWithAI(batch, base44);
+        batch.forEach((t, idx) => {
+          if (aiCategories[idx] && aiCategories[idx] !== "Sin Clasificar") {
+            t.category = aiCategories[idx];
+            t.ai_classified = true;
+          }
+        });
+      }
+    } catch (err) {
+      console.error("AI classification failed:", err);
+    }
+    setAiProcessing(false);
+    return transactions;
+  };
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];
@@ -25,18 +50,24 @@ export default function CSVImporter({ budgetId, onImported }) {
 
     if (ext === "xls" || ext === "xlsx") {
       const reader = new FileReader();
-      reader.onload = (evt) => {
+      reader.onload = async (evt) => {
         const result = parseSabadellXLS(evt.target.result);
         if (result.error) { setError(result.error); setParsedData(null); }
-        else { setParsedData(result.transactions); setMetadata(result.metadata); }
+        else {
+          const txns = await processWithAI(result.transactions, file.name);
+          setParsedData(txns); setMetadata(result.metadata);
+        }
       };
       reader.readAsArrayBuffer(file);
     } else {
       const reader = new FileReader();
-      reader.onload = (evt) => {
+      reader.onload = async (evt) => {
         const result = parseCSV(evt.target.result);
         if (result.error) { setError(result.error); setParsedData(null); }
-        else { setParsedData(result.transactions); setMetadata(result.metadata); }
+        else {
+          const txns = await processWithAI(result.transactions, file.name);
+          setParsedData(txns); setMetadata(result.metadata);
+        }
       };
       reader.readAsText(file, "UTF-8");
     }

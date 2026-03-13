@@ -57,6 +57,7 @@ export default function ImportPreview({ transactions, budgetId, onCancel, onImpo
           { label: `Ingresos (${incomeRows.length})`, val: formatEUR(totalIncome), color: "#4ade80" },
           { label: `Gastos (${expenseRows.length})`, val: formatEUR(totalExpenses), color: "#f87171" },
           { label: "Sin Clasificar", val: unclassified, color: unclassified > 0 ? "#fbbf24" : "#4ade80" },
+          { label: "Clasificados por IA 🤖", val: aiClassified, color: "#a78bfa" },
         ].map(item => (
           <div key={item.label} className="rounded-lg p-3" style={{ background: "#1a2030" }}>
             <div className="text-xs" style={{ color: "#64748b" }}>{item.label}</div>
