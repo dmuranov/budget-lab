@@ -89,17 +89,25 @@ export default function Configuracion() {
 
     try {
       const res = await base44.functions.invoke('deleteAllTransactions');
+      console.log("DELETE RESPONSE:", res);
 
       const data = res?.data || res;
-      const msg = data?.message || data?.error || "Operación completada";
-
+      const msg = data?.message || data?.error || JSON.stringify(data);
       setDeleteMsg(msg);
     } catch (error) {
-      setDeleteMsg("Error: " + (error?.message || error?.data?.error || "No se pudo conectar con el servidor"));
+      console.error("DELETE ERROR FULL:", error);
+      console.error("DELETE ERROR RESPONSE:", error?.response?.data);
+
+      const serverMsg = error?.response?.data?.error
+        || error?.response?.data?.message
+        || error?.data?.error
+        || error?.message
+        || "Error desconocido";
+
+      setDeleteMsg("Error: " + serverMsg);
     }
 
     setDeleting(false);
-
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
     queryClient.invalidateQueries({ queryKey: ["transactions-movimientos"] });
     queryClient.invalidateQueries({ queryKey: ["all-transactions"] });
