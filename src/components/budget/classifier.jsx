@@ -196,7 +196,7 @@ const VALID_CATEGORIES = [
   "Devolución", "Intereses", "Otro Ingreso", "Sin Clasificar"
 ];
 
-export async function classifyWithAI(unclassifiedTransactions, base44Client) {
+export async function classifyWithAI(unclassifiedTransactions, base44Client, apiKey = null) {
   if (!unclassifiedTransactions || unclassifiedTransactions.length === 0) return [];
 
   const txList = unclassifiedTransactions.map((t, i) =>
@@ -222,9 +222,33 @@ RESPONDE EXACTAMENTE ASÍ (un número por línea):
 2. Categoría
 ...`;
 
-  const result = await base44Client.integrations.Core.InvokeLLM({ prompt, model: "claude_sonnet_4_6" });
+  let resultText = "";
 
-  const lines = (typeof result === "string" ? result : result?.content || "").trim().split("\n");
+  if (apiKey) {
+    // Llamada directa a la API de Anthropic con la key del usuario
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-5",
+        max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+    const data = await response.json();
+    resultText = data.content?.[0]?.text || "";
+  } else {
+    // Fallback: créditos de Base44
+    const result = await base44Client.integrations.Core.InvokeLLM({ prompt, model: "claude_sonnet_4_6" });
+    resultText = typeof result === "string" ? result : result?.content || "";
+  }
+
+  const lines = resultText.trim().split("\n");
   return unclassifiedTransactions.map((_, i) => {
     const line = lines[i] || "";
     const match = line.match(/^\d+[\.\:\-\)]\s*(.+)$/);
