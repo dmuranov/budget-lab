@@ -1,11 +1,14 @@
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, AlertTriangle } from "lucide-react";
-import { parseCSV } from "../budget/csvParser";
+import { parseCSV, parseSabadellXLS } from "../budget/csvParser";
+import { detectSalaries } from "../budget/classifier";
 import ImportPreview from "./ImportPreview";
+import AccountInfoCard from "./AccountInfoCard";
 
 export default function CSVImporter({ budgetId, onImported }) {
   const [parsedData, setParsedData] = useState(null);
+  const [metadata, setMetadata] = useState(null);
   const [error, setError] = useState(null);
   const [fileName, setFileName] = useState("");
   const fileRef = useRef();
@@ -15,13 +18,27 @@ export default function CSVImporter({ budgetId, onImported }) {
     if (!file) return;
     setFileName(file.name);
     setError(null);
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const result = parseCSV(evt.target.result);
-      if (result.error) { setError(result.error); setParsedData(null); }
-      else { setParsedData(result.transactions); }
-    };
-    reader.readAsText(file, "UTF-8");
+    setMetadata(null);
+
+    const ext = file.name.split(".").pop().toLowerCase();
+
+    if (ext === "xls" || ext === "xlsx") {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const result = parseSabadellXLS(evt.target.result);
+        if (result.error) { setError(result.error); setParsedData(null); }
+        else { setParsedData(result.transactions); setMetadata(result.metadata); }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const result = parseCSV(evt.target.result);
+        if (result.error) { setError(result.error); setParsedData(null); }
+        else { setParsedData(result.transactions); setMetadata(result.metadata); }
+      };
+      reader.readAsText(file, "UTF-8");
+    }
   };
 
   const handleSampleDownload = () => {
@@ -71,13 +88,13 @@ export default function CSVImporter({ budgetId, onImported }) {
           <div onClick={() => fileRef.current?.click()}
             className="border-2 border-dashed rounded-xl p-10 text-center cursor-pointer hover:border-opacity-50 transition-all"
             style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-            <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
+            <input ref={fileRef} type="file" accept=".csv,.xls,.xlsx" onChange={handleFile} className="hidden" />
             <Upload size={32} className="mx-auto mb-3" style={{ color: "#64748b" }} />
             <p className="text-sm font-medium" style={{ color: "#94a3b8" }}>
-              {fileName || "Haz clic para subir tu extracto CSV"}
+              {fileName || "Haz clic para subir tu extracto bancario"}
             </p>
             <p className="text-xs mt-1" style={{ color: "#64748b" }}>
-              Compatible con CaixaBank, Santander, BBVA, ING, Openbank, Revolut, N26 y otros bancos españoles
+              Acepta Excel (.xls, .xlsx) y CSV · Compatible con Sabadell, CaixaBank, Santander, BBVA, ING, Openbank y más
             </p>
           </div>
           {error && (
@@ -88,12 +105,15 @@ export default function CSVImporter({ budgetId, onImported }) {
           )}
         </div>
       ) : (
-        <ImportPreview
-          transactions={parsedData}
-          budgetId={budgetId}
-          onCancel={() => { setParsedData(null); setFileName(""); }}
-          onImported={onImported}
-        />
+        <div>
+          {metadata && <AccountInfoCard metadata={metadata} transactions={parsedData} />}
+          <ImportPreview
+            transactions={parsedData}
+            budgetId={budgetId}
+            onCancel={() => { setParsedData(null); setFileName(""); setMetadata(null); }}
+            onImported={onImported}
+          />
+        </div>
       )}
     </div>
   );
