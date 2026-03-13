@@ -88,23 +88,25 @@ export default function Configuracion() {
     setDeleteMsg(null);
 
     try {
-      const res = await base44.functions.invoke('deleteAllTransactions');
-      console.log("DELETE RESPONSE:", res);
+      let deleted = 0;
 
-      const data = res?.data || res;
-      const msg = data?.message || data?.error || JSON.stringify(data);
-      setDeleteMsg(msg);
+      const budgets = await base44.entities.MonthlyBudget.list("-month", 50);
+
+      for (const budget of budgets) {
+        const txns = await base44.entities.Transaction.filter({ budget_id: budget.id }, "date", 5000);
+
+        for (let i = 0; i < txns.length; i += 20) {
+          const batch = txns.slice(i, i + 20);
+          await Promise.all(batch.map(t => base44.entities.Transaction.delete(t.id)));
+          deleted += batch.length;
+          setDeleteMsg(`Eliminando... ${deleted} transacciones borradas`);
+        }
+      }
+
+      setDeleteMsg(`✅ Se eliminaron ${deleted} transacciones correctamente.`);
     } catch (error) {
-      console.error("DELETE ERROR FULL:", error);
-      console.error("DELETE ERROR RESPONSE:", error?.response?.data);
-
-      const serverMsg = error?.response?.data?.error
-        || error?.response?.data?.message
-        || error?.data?.error
-        || error?.message
-        || "Error desconocido";
-
-      setDeleteMsg("Error: " + serverMsg);
+      console.error("DELETE ERROR:", error);
+      setDeleteMsg("Error: " + (error?.message || "desconocido"));
     }
 
     setDeleting(false);
