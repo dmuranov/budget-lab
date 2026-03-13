@@ -123,11 +123,24 @@ export default function Panel() {
             {panelTitle && <p className="text-xs" style={{ color: "#64748b" }}>{panelTitle}</p>}
           </div>
         </div>
-        <BudgetSelector
-          value={showingTodos ? "todos" : (activeId || budgets[0]?.id)}
-          onChange={setSelectedId}
-          showTodos={true}
-        />
+        <div className="flex items-center gap-3">
+          <select
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(e.target.value)}
+            className="px-3 py-2 rounded-lg text-sm font-medium"
+            style={{ background: "#1a2030", color: "#f1f5f9", border: "1px solid rgba(255,255,255,0.1)" }}
+          >
+            <option value="all">📊 Todos los meses</option>
+            {availableMonths.map(m => (
+              <option key={m} value={m}>{formatMonth(m)}</option>
+            ))}
+          </select>
+          <BudgetSelector
+            value={showingTodos ? "todos" : (activeId || budgets[0]?.id)}
+            onChange={setSelectedId}
+            showTodos={true}
+          />
+        </div>
       </div>
 
       {/* Vista multi-mes */}
