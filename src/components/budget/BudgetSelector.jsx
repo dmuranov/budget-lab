@@ -10,23 +10,19 @@ export default function BudgetSelector({ value, onChange }) {
   });
 
   if (budgets.length === 0) {
-    return (
-      <div className="text-sm" style={{ color: "#64748b" }}>
-        No budgets yet. Go to Setup to create one.
-      </div>
-    );
+    return <div className="text-sm" style={{ color: "#64748b" }}>Sin presupuestos. Ve a Configuración.</div>;
   }
 
   return (
     <Select value={value || ""} onValueChange={onChange}>
       <SelectTrigger className="w-48 border-0 text-sm font-medium"
         style={{ background: "#1a2030", color: "#f1f5f9" }}>
-        <SelectValue placeholder="Select month" />
+        <SelectValue placeholder="Seleccionar mes" />
       </SelectTrigger>
       <SelectContent style={{ background: "#1a2030", border: "1px solid rgba(255,255,255,0.1)" }}>
         {budgets.map(b => (
           <SelectItem key={b.id} value={b.id} style={{ color: "#f1f5f9" }}>
-            {b.month} {b.name_person1 ? `· ${b.name_person1}` : ""}
+            {b.month}
           </SelectItem>
         ))}
       </SelectContent>

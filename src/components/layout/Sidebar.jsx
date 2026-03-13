@@ -1,23 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Settings, LayoutDashboard, ArrowLeftRight, Landmark, Target, Bot, Menu, X } from "lucide-react";
+import { Settings, LayoutDashboard, ArrowLeftRight, Landmark, Target, Bot, Menu, X, BookOpen } from "lucide-react";
 
 const NAV_ITEMS = [
-  { path: "/Setup", label: "Setup", icon: Settings },
-  { path: "/Dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/Transactions", label: "Transactions", icon: ArrowLeftRight },
-  { path: "/NetWorth", label: "Net Worth", icon: Landmark },
-  { path: "/Goals", label: "Goals", icon: Target },
-  { path: "/AIAdvisor", label: "AI Advisor", icon: Bot },
+  { path: "/Configuracion", label: "Configuración", icon: Settings },
+  { path: "/Panel", label: "Panel", icon: LayoutDashboard },
+  { path: "/Movimientos", label: "Movimientos", icon: ArrowLeftRight },
+  { path: "/Patrimonio", label: "Patrimonio", icon: Landmark },
+  { path: "/Presupuesto", label: "Presupuesto", icon: BookOpen },
+  { path: "/Metas", label: "Metas", icon: Target },
+  { path: "/AsesorIA", label: "Asesor IA", icon: Bot },
 ];
 
 export default function Sidebar() {
   const location = useLocation();
-  const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <>
-      {/* Mobile header */}
+      {/* Cabecera móvil */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between px-4"
         style={{ background: "#0b0e13", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="flex items-center gap-2">
@@ -31,12 +32,10 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40 bg-black/60" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 h-full z-50 w-56 flex flex-col transition-transform duration-300
           lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
@@ -51,18 +50,11 @@ export default function Sidebar() {
 
         <nav className="flex-1 px-3 mt-2 space-y-1">
           {NAV_ITEMS.map(item => {
-            const active = location.pathname === item.path;
+            const active = location.pathname === item.path || location.pathname === "/" + item.path.slice(1);
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setMobileOpen(false)}
+              <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
-                style={{
-                  background: active ? "rgba(74,222,128,0.1)" : "transparent",
-                  color: active ? "#4ade80" : "#94a3b8",
-                }}
-              >
+                style={{ background: active ? "rgba(74,222,128,0.1)" : "transparent", color: active ? "#4ade80" : "#94a3b8" }}>
                 <item.icon size={18} />
                 {item.label}
               </Link>
@@ -71,7 +63,7 @@ export default function Sidebar() {
         </nav>
 
         <div className="px-5 py-4 text-xs" style={{ color: "#64748b" }}>
-          v2.0 · Madrid, ES
+          v2.0 · Madrid, España
         </div>
       </aside>
     </>
