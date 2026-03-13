@@ -261,6 +261,50 @@ RESPONDE EXACTAMENTE ASÍ (un número por línea):
   });
 }
 
+export function detectSalaryPattern(allTransactions) {
+  const nominas = allTransactions.filter(t =>
+    t.direction === "ingreso" && t.category === "Nómina" && t.date
+  );
+  if (nominas.length === 0) return null;
+
+  const days = nominas.map(t => {
+    const parts = t.date.split("-");
+    return parseInt(parts[2]);
+  }).filter(d => !isNaN(d));
+
+  if (days.length === 0) return null;
+
+  const groups = [];
+  const sorted = [...days].sort((a, b) => a - b);
+
+  for (const day of sorted) {
+    let matched = false;
+    for (const group of groups) {
+      const avg = group.reduce((s, d) => s + d, 0) / group.length;
+      if (Math.abs(day - avg) <= 3) {
+        group.push(day);
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) groups.push([day]);
+  }
+
+  const patterns = groups.map(g => ({
+    avgDay: Math.round(g.reduce((s, d) => s + d, 0) / g.length),
+    minDay: Math.min(...g),
+    maxDay: Math.max(...g),
+    count: g.length,
+  }));
+
+  return {
+    patterns,
+    earliestDay: Math.min(...patterns.map(p => p.minDay)),
+    latestDay: Math.max(...patterns.map(p => p.maxDay)),
+    totalNominas: nominas.length,
+  };
+}
+
 export function detectRecurring(transactions) {
   const descCounts = {};
   transactions.forEach(t => {
