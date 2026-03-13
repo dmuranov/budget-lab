@@ -9,6 +9,7 @@ import { base44 } from "@/api/base44Client";
 import { useAppSettings } from "../budget/useAppSettings";
 
 export default function CSVImporter({ budgetId, onImported }) {
+  const { getSetting } = useAppSettings();
   const [parsedData, setParsedData] = useState(null);
   const [metadata, setMetadata] = useState(null);
   const [error, setError] = useState(null);
