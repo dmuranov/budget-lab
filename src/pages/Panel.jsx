@@ -17,6 +17,7 @@ import SuscripcionesRecurrentes from "../components/dashboard/SuscripcionesRecur
 import TopGastos from "../components/dashboard/TopGastos";
 import AlertasInteligentes from "../components/dashboard/AlertasInteligentes";
 import ResumenMultiMes from "../components/dashboard/ResumenMultiMes";
+import BannerNomina from "../components/dashboard/BannerNomina";
 
 export default function Panel() {
   const { selectedId, setSelectedId } = useSelectedBudget();
