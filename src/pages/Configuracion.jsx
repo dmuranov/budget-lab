@@ -84,24 +84,22 @@ export default function Configuracion() {
       <CSVImporter budgetId={activeBudgetId} onImported={() => setImportDone(true)} />
 
       {/* Botón reclasificar */}
-      {activeBudgetId && (
-        <div className="rounded-xl p-5" style={{ background: "#151a22", border: "1px solid rgba(255,255,255,0.06)" }}>
-          <h2 className="text-sm font-semibold mb-2" style={{ color: "#f1f5f9" }}>🔄 Reclasificar Movimientos</h2>
-          <p className="text-xs mb-4" style={{ color: "#64748b" }}>
-            Aplica la lógica de clasificación actualizada a todos los movimientos existentes. Útil tras actualizar las reglas.
+      <div className="rounded-xl p-5" style={{ background: "#151a22", border: "1px solid rgba(255,255,255,0.06)" }}>
+        <h2 className="text-sm font-semibold mb-2" style={{ color: "#f1f5f9" }}>🔄 Reclasificar Movimientos</h2>
+        <p className="text-xs mb-4" style={{ color: "#64748b" }}>
+          Aplica la lógica de clasificación actualizada a TODOS los movimientos existentes en la base de datos. Útil tras actualizar las reglas.
+        </p>
+        <Button onClick={handleReclasificar} disabled={reclasificando} size="sm"
+          style={{ background: reclasificando ? "#1a2030" : "#4ade80", color: "#0b0e13" }}>
+          <RefreshCw size={14} className={reclasificando ? "animate-spin mr-2" : "mr-2"} />
+          {reclasificando ? "Reclasificando..." : "🔄 Reclasificar todos los movimientos"}
+        </Button>
+        {reclasificadoCount !== null && (
+          <p className="text-xs mt-3" style={{ color: "#4ade80" }}>
+            ✅ {reclasificadoCount} movimientos actualizados
           </p>
-          <Button onClick={handleReclasificar} disabled={reclasificando} size="sm"
-            style={{ background: reclasificando ? "#1a2030" : "#4ade80", color: "#0b0e13" }}>
-            <RefreshCw size={14} className={reclasificando ? "animate-spin mr-2" : "mr-2"} />
-            {reclasificando ? "Reclasificando..." : "🔄 Reclasificar todos los movimientos"}
-          </Button>
-          {reclasificadoCount !== null && (
-            <p className="text-xs mt-3" style={{ color: "#4ade80" }}>
-              ✅ {reclasificadoCount} movimientos actualizados
-            </p>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Eliminar todas las transacciones */}
       <div className="rounded-xl p-5" style={{ background: "#151a22", border: "1px solid rgba(239,68,68,0.2)" }}>
