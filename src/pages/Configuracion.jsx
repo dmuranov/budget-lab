@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export default function Configuracion() {
   const queryClient = useQueryClient();
+  const { getSetting } = useAppSettings();
   const [activeBudgetId, setActiveBudgetId] = useState(null);
   const [importDone, setImportDone] = useState(false);
   const [reclasificando, setReclasificando] = useState(false);
