@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Settings, RefreshCw, Trash2 } from "lucide-react";
 import { formatEUR } from "../components/budget/constants";
-import { classifyTransaction } from "../components/budget/classifier";
+import { classifyTransaction, classifyWithAI } from "../components/budget/classifier";
 import { Button } from "@/components/ui/button";
 import HouseholdForm from "../components/setup/HouseholdForm";
 import CSVImporter from "../components/setup/CSVImporter";

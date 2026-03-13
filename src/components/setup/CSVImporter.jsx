@@ -123,7 +123,7 @@ export default function CSVImporter({ budgetId, onImported }) {
             <input ref={fileRef} type="file" accept=".csv,.xls,.xlsx" onChange={handleFile} className="hidden" />
             <Upload size={32} className="mx-auto mb-3" style={{ color: "#64748b" }} />
             <p className="text-sm font-medium" style={{ color: "#94a3b8" }}>
-              {fileName || "Haz clic para subir tu extracto bancario"}
+              {aiProcessing ? "🤖 Clasificando con IA..." : (fileName || "Haz clic para subir tu extracto bancario")}
             </p>
             <p className="text-xs mt-1" style={{ color: "#64748b" }}>
               Acepta Excel (.xls, .xlsx) y CSV · Compatible con Sabadell, CaixaBank, Santander, BBVA, ING, Openbank y más
