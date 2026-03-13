@@ -9,8 +9,11 @@ import HouseholdForm from "../components/setup/HouseholdForm";
 import CSVImporter from "../components/setup/CSVImporter";
 
 export default function Configuracion() {
+  const queryClient = useQueryClient();
   const [activeBudgetId, setActiveBudgetId] = useState(null);
   const [importDone, setImportDone] = useState(false);
+  const [reclasificando, setReclasificando] = useState(false);
+  const [reclasificadoCount, setReclasificadoCount] = useState(null);
 
   const { data: transactions = [] } = useQuery({
     queryKey: ["transactions", activeBudgetId],
@@ -22,6 +25,37 @@ export default function Configuracion() {
   const obligaciones = transactions.filter(t => t.is_fixed && t.direction === "gasto");
   const recurrentes = transactions.filter(t => t.is_recurring && t.direction === "gasto");
   const sinClasificar = transactions.filter(t => t.category === "Sin Clasificar");
+
+  const handleReclasificar = async () => {
+    if (!activeBudgetId) return;
+    setReclasificando(true);
+    setReclasificadoCount(null);
+
+    // Obtener todos los movimientos del presupuesto
+    const allTxns = await base44.entities.Transaction.filter({ budget_id: activeBudgetId }, "date", 5000);
+    let count = 0;
+
+    // Procesar en batches de 10
+    for (let i = 0; i < allTxns.length; i += 10) {
+      const batch = allTxns.slice(i, i + 10);
+      await Promise.all(batch.map(async (t) => {
+        const { flowType, category, isRecurring, isFixed } = classifyTransaction(t.description, t.direction);
+        if (category !== t.category || isRecurring !== t.is_recurring || isFixed !== t.is_fixed) {
+          await base44.entities.Transaction.update(t.id, {
+            category,
+            flow_type: flowType,
+            is_recurring: isRecurring,
+            is_fixed: isFixed,
+          });
+          count++;
+        }
+      }));
+    }
+
+    setReclasificadoCount(count);
+    setReclasificando(false);
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+  };
 
   return (
     <div className="space-y-6">
@@ -37,6 +71,26 @@ export default function Configuracion() {
 
       <HouseholdForm onBudgetCreated={(b) => setActiveBudgetId(b.id)} />
       <CSVImporter budgetId={activeBudgetId} onImported={() => setImportDone(true)} />
+
+      {/* Botón reclasificar */}
+      {activeBudgetId && (
+        <div className="rounded-xl p-5" style={{ background: "#151a22", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <h2 className="text-sm font-semibold mb-2" style={{ color: "#f1f5f9" }}>🔄 Reclasificar Movimientos</h2>
+          <p className="text-xs mb-4" style={{ color: "#64748b" }}>
+            Aplica la lógica de clasificación actualizada a todos los movimientos existentes. Útil tras actualizar las reglas.
+          </p>
+          <Button onClick={handleReclasificar} disabled={reclasificando} size="sm"
+            style={{ background: reclasificando ? "#1a2030" : "#4ade80", color: "#0b0e13" }}>
+            <RefreshCw size={14} className={reclasificando ? "animate-spin mr-2" : "mr-2"} />
+            {reclasificando ? "Reclasificando..." : "🔄 Reclasificar todos los movimientos"}
+          </Button>
+          {reclasificadoCount !== null && (
+            <p className="text-xs mt-3" style={{ color: "#4ade80" }}>
+              ✅ {reclasificadoCount} movimientos actualizados
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Detección automática tras importar */}
       {importDone && transactions.length > 0 && (
