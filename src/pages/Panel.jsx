@@ -5,7 +5,7 @@ import { LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatEUR, formatPct } from "../components/budget/constants";
 import { useBudgetData } from "../components/budget/useBudgetData";
-import BudgetSelector from "../components/budget/BudgetSelector";
+import BudgetSelector, { formatMonthES } from "../components/budget/BudgetSelector";
 import StatCard from "../components/budget/StatCard";
 import DesglosIngresos from "../components/dashboard/DesglosIngresos";
 import ObligacionesFijas from "../components/dashboard/ObligacionesFijas";
@@ -15,15 +15,17 @@ import SituacionDeuda from "../components/dashboard/SituacionDeuda";
 import SuscripcionesRecurrentes from "../components/dashboard/SuscripcionesRecurrentes";
 import TopGastos from "../components/dashboard/TopGastos";
 import AlertasInteligentes from "../components/dashboard/AlertasInteligentes";
+import ResumenMultiMes from "../components/dashboard/ResumenMultiMes";
 
 export default function Panel() {
-  const { data: budgets = [] } = useQuery({
+  const { data: budgets = [], isLoading: loadingBudgets } = useQuery({
     queryKey: ["budgets"],
     queryFn: () => base44.entities.MonthlyBudget.list("-month", 50),
   });
 
   const [selectedId, setSelectedId] = useState(null);
-  const activeId = selectedId || budgets[0]?.id;
+  const activeId = selectedId === "todos" ? null : (selectedId || budgets[0]?.id);
+  const showingTodos = selectedId === "todos";
 
   const {
     budget, transactions, income, expenses,
@@ -34,7 +36,7 @@ export default function Panel() {
     isLoading,
   } = useBudgetData(activeId);
 
-  if (budgets.length === 0 && !isLoading) {
+  if (budgets.length === 0 && !loadingBudgets) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: "rgba(74,222,128,0.1)" }}>
@@ -49,7 +51,13 @@ export default function Panel() {
     );
   }
 
+  const activeBudget = budgets.find(b => b.id === activeId);
   const savingsColor = savingsRate >= 20 ? "#4ade80" : savingsRate >= 10 ? "#fbbf24" : "#f87171";
+
+  // Aviso de nómina ausente: hay gastos pero no hay ingresos de nómina en este mes
+  const tieneNomina = income.some(t => t.category === "Nómina");
+  const tieneGastos = expenses.length > 0;
+  const mostrarAvisoNomina = !showingTodos && tieneGastos && !tieneNomina && !isLoading;
 
   return (
     <div className="space-y-6">
@@ -58,17 +66,42 @@ export default function Panel() {
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(74,222,128,0.1)" }}>
             <LayoutDashboard size={20} style={{ color: "#4ade80" }} />
           </div>
-          <h1 className="text-2xl font-bold" style={{ color: "#f1f5f9" }}>📊 Panel Principal</h1>
+          <div>
+            <h1 className="text-2xl font-bold" style={{ color: "#f1f5f9" }}>📊 Panel Principal</h1>
+            {activeBudget && !showingTodos && (
+              <p className="text-xs" style={{ color: "#64748b" }}>{formatMonthES(activeBudget.month)}</p>
+            )}
+          </div>
         </div>
-        <BudgetSelector value={activeId} onChange={setSelectedId} />
+        <BudgetSelector
+          value={selectedId || budgets[0]?.id}
+          onChange={setSelectedId}
+          showTodos={true}
+        />
       </div>
 
-      {isLoading ? (
+      {/* Vista multi-mes */}
+      {showingTodos ? (
+        <ResumenMultiMes budgets={budgets} />
+      ) : isLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="w-8 h-8 border-4 rounded-full animate-spin" style={{ borderColor: "#1a2030", borderTopColor: "#4ade80" }} />
         </div>
       ) : (
         <>
+          {/* Aviso nómina ausente */}
+          {mostrarAvisoNomina && (
+            <div className="rounded-xl p-4" style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)" }}>
+              <p className="text-sm font-medium mb-1" style={{ color: "#fbbf24" }}>
+                ⚠️ No se detectaron nóminas en {formatMonthES(activeBudget?.month)}
+              </p>
+              <p className="text-xs" style={{ color: "#94a3b8" }}>
+                Esto puede ser porque vuestras nóminas se cobran entre el 25-30 del mes anterior y el extracto no las incluye.
+                Para tener datos completos, exportad el extracto bancario desde el día 25 del mes anterior.
+              </p>
+            </div>
+          )}
+
           {/* Fila 1: Tarjetas resumen */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="💵 Ingresos Totales" value={formatEUR(totalIncome)} color="#4ade80" />
