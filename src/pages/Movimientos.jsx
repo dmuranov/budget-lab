@@ -5,7 +5,7 @@ import { ArrowLeftRight, ArrowUp, ArrowDown, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatEUR, ALL_CATEGORIES, CATEGORY_CONFIG } from "../components/budget/constants";
-import BudgetSelector from "../components/budget/BudgetSelector";
+import BudgetSelector, { formatMonthES } from "../components/budget/BudgetSelector";
 
 const PESTAÑAS = [
   { id: "todos", label: "Todos" },
