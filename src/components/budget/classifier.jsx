@@ -87,6 +87,16 @@ const EXPENSE_SUBCATEGORIES = [
 ];
 
 export function classifyTransaction(description, direction) {
+  // PRIORIDAD MÁXIMA: Bosnia/Croacia → Padres de Danijel (antes que cualquier otra regla)
+  if (direction === "gasto" && matchesAny(description, BOSNIA_CROATIA_KEYWORDS)) {
+    return { flowType: "GASTO_FAMILIA_BOSNIA", category: "Padres de Danijel", isRecurring: false, isFixed: false };
+  }
+
+  // PRIORIDAD 2: Apuestas/Juego
+  if (direction === "gasto" && matchesAny(description, GAMBLING_KEYWORDS)) {
+    return { flowType: "APUESTAS", category: "Apuestas/Juego", isRecurring: false, isFixed: false };
+  }
+
   const flows = direction === "ingreso" ? INCOME_FLOWS : EXPENSE_FLOWS;
 
   for (const rule of flows) {
@@ -98,16 +108,6 @@ export function classifyTransaction(description, direction) {
         isFixed: rule.isFixed || false,
       };
     }
-  }
-
-  // PRIORIDAD 1: Bosnia/Croacia → Padres de Danijel
-  if (direction === "gasto" && matchesAny(description, BOSNIA_CROATIA_KEYWORDS)) {
-    return { flowType: "GASTO_FAMILIA_BOSNIA", category: "Padres de Danijel", isRecurring: false, isFixed: false };
-  }
-
-  // PRIORIDAD 2: Apuestas/Juego
-  if (direction === "gasto" && matchesAny(description, GAMBLING_KEYWORDS)) {
-    return { flowType: "APUESTAS", category: "Apuestas/Juego", isRecurring: false, isFixed: false };
   }
 
   if (direction === "gasto") {

@@ -56,7 +56,8 @@ export const ALL_CATEGORIES = Object.keys(CATEGORY_CONFIG);
 // Categorías para la regla 50/30/20
 export const NECESIDADES_CATEGORIAS = [
   "Vivienda", "Hipoteca", "Suministros", "Supermercado", "Transporte",
-  "Seguros", "Salud", "Impuestos/Tasas", "Préstamo", "Educación Hija"
+  "Seguros", "Salud", "Impuestos/Tasas", "Préstamo", "Educación Hija",
+  "Pago Tarjeta Crédito"
 ];
 
 export const DESEOS_CATEGORIAS = [
