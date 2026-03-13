@@ -104,6 +104,37 @@ export default function Configuracion() {
         </div>
       )}
 
+      {/* Eliminar todas las transacciones */}
+      <div className="rounded-xl p-5" style={{ background: "#151a22", border: "1px solid rgba(239,68,68,0.2)" }}>
+        <h2 className="text-sm font-semibold mb-2" style={{ color: "#f87171" }}>🗑️ Zona de Peligro</h2>
+        <p className="text-xs mb-4" style={{ color: "#64748b" }}>
+          Elimina todas las transacciones de la base de datos. Esta acción no se puede deshacer.
+        </p>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" size="sm" disabled={deleting}>
+              <Trash2 size={14} className="mr-2" />
+              {deleting ? "Eliminando..." : "Eliminar todas las transacciones"}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent style={{ background: "#151a22", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <AlertDialogHeader>
+              <AlertDialogTitle style={{ color: "#f87171" }}>¿Estás seguro?</AlertDialogTitle>
+              <AlertDialogDescription style={{ color: "#94a3b8" }}>
+                Esta acción eliminará permanentemente TODAS las transacciones. No se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel style={{ background: "#1a2030", color: "#f1f5f9", border: "none" }}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteAll} style={{ background: "#ef4444", color: "white" }}>
+                Sí, eliminar todo
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        {deleteMsg && <p className="text-xs mt-3" style={{ color: "#4ade80" }}>✅ {deleteMsg}</p>}
+      </div>
+
       {/* Detección automática tras importar */}
       {importDone && transactions.length > 0 && (
         <div className="rounded-xl p-6" style={{ background: "#151a22", border: "1px solid rgba(255,255,255,0.06)" }}>
