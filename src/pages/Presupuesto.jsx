@@ -5,7 +5,8 @@ import { BookOpen, Plus, Pencil, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatEUR, CATEGORY_CONFIG, DESEOS_CATEGORIAS, NECESIDADES_CATEGORIAS } from "../components/budget/constants";
-import BudgetSelector from "../components/budget/BudgetSelector";
+import BudgetSelector, { formatMonthES } from "../components/budget/BudgetSelector";
+import { useSelectedBudget } from "../components/budget/SelectedBudgetContext";
 import { useBudgetData } from "../components/budget/useBudgetData";
 
 const CATEGORIAS_GASTOS = [

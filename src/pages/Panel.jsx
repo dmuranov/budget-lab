@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { LayoutDashboard } from "lucide-react";
@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { formatEUR, formatPct } from "../components/budget/constants";
 import { useBudgetData } from "../components/budget/useBudgetData";
 import BudgetSelector, { formatMonthES } from "../components/budget/BudgetSelector";
+import { useSelectedBudget } from "../components/budget/SelectedBudgetContext";
 import StatCard from "../components/budget/StatCard";
 import DesglosIngresos from "../components/dashboard/DesglosIngresos";
 import ObligacionesFijas from "../components/dashboard/ObligacionesFijas";
@@ -18,14 +19,15 @@ import AlertasInteligentes from "../components/dashboard/AlertasInteligentes";
 import ResumenMultiMes from "../components/dashboard/ResumenMultiMes";
 
 export default function Panel() {
+  const { selectedId, setSelectedId } = useSelectedBudget();
+
   const { data: budgets = [], isLoading: loadingBudgets } = useQuery({
     queryKey: ["budgets"],
     queryFn: () => base44.entities.MonthlyBudget.list("-month", 50),
   });
 
-  const [selectedId, setSelectedId] = useState(null);
-  const activeId = selectedId === "todos" ? null : (selectedId || budgets[0]?.id);
   const showingTodos = selectedId === "todos";
+  const activeId = showingTodos ? null : (selectedId || budgets[0]?.id);
 
   const {
     budget, transactions, income, expenses,
@@ -53,11 +55,7 @@ export default function Panel() {
 
   const activeBudget = budgets.find(b => b.id === activeId);
   const savingsColor = savingsRate >= 20 ? "#4ade80" : savingsRate >= 10 ? "#fbbf24" : "#f87171";
-
-  // Aviso de nómina ausente: hay gastos pero no hay ingresos de nómina en este mes
-  const tieneNomina = income.some(t => t.category === "Nómina");
-  const tieneGastos = expenses.length > 0;
-  const mostrarAvisoNomina = !showingTodos && tieneGastos && !tieneNomina && !isLoading;
+  const panelTitle = showingTodos ? "Resumen Total" : activeBudget ? formatMonthES(activeBudget.month) : "";
 
   return (
     <div className="space-y-6">
@@ -68,13 +66,11 @@ export default function Panel() {
           </div>
           <div>
             <h1 className="text-2xl font-bold" style={{ color: "#f1f5f9" }}>📊 Panel Principal</h1>
-            {activeBudget && !showingTodos && (
-              <p className="text-xs" style={{ color: "#64748b" }}>{formatMonthES(activeBudget.month)}</p>
-            )}
+            {panelTitle && <p className="text-xs" style={{ color: "#64748b" }}>{panelTitle}</p>}
           </div>
         </div>
         <BudgetSelector
-          value={selectedId || budgets[0]?.id}
+          value={showingTodos ? "todos" : (activeId || budgets[0]?.id)}
           onChange={setSelectedId}
           showTodos={true}
         />
@@ -89,19 +85,6 @@ export default function Panel() {
         </div>
       ) : (
         <>
-          {/* Aviso nómina ausente */}
-          {mostrarAvisoNomina && (
-            <div className="rounded-xl p-4" style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)" }}>
-              <p className="text-sm font-medium mb-1" style={{ color: "#fbbf24" }}>
-                ⚠️ No se detectaron nóminas en {formatMonthES(activeBudget?.month)}
-              </p>
-              <p className="text-xs" style={{ color: "#94a3b8" }}>
-                Esto puede ser porque vuestras nóminas se cobran entre el 25-30 del mes anterior y el extracto no las incluye.
-                Para tener datos completos, exportad el extracto bancario desde el día 25 del mes anterior.
-              </p>
-            </div>
-          )}
-
           {/* Fila 1: Tarjetas resumen */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="💵 Ingresos Totales" value={formatEUR(totalIncome)} color="#4ade80" />

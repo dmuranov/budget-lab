@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import AppLayout from './components/layout/AppLayout';
+import { SelectedBudgetProvider } from './components/budget/SelectedBudgetContext';
 import Configuracion from './pages/Configuracion';
 import Panel from './pages/Panel';
 import Movimientos from './pages/Movimientos';
