@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { LayoutDashboard } from "lucide-react";
@@ -18,6 +18,37 @@ import TopGastos from "../components/dashboard/TopGastos";
 import AlertasInteligentes from "../components/dashboard/AlertasInteligentes";
 import ResumenMultiMes from "../components/dashboard/ResumenMultiMes";
 import BannerNomina from "../components/dashboard/BannerNomina";
+
+const MONTH_NAMES = {
+  "01": "Enero", "02": "Febrero", "03": "Marzo", "04": "Abril",
+  "05": "Mayo", "06": "Junio", "07": "Julio", "08": "Agosto",
+  "09": "Septiembre", "10": "Octubre", "11": "Noviembre", "12": "Diciembre"
+};
+
+function extractMonth(dateStr) {
+  if (!dateStr) return null;
+  const str = String(dateStr);
+  
+  // ISO: "2026-03-12"
+  const isoMatch = str.match(/^(\d{4})-(\d{2})/);
+  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}`;
+  
+  // Europeo: "12/03/2026"
+  const euMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (euMatch) return `${euMatch[3]}-${euMatch[2].padStart(2, "0")}`;
+  
+  return null;
+}
+
+function formatMonth(monthKey) {
+  const [year, month] = monthKey.split("-");
+  return `${MONTH_NAMES[month]} ${year}`;
+}
+
+function filterTransactionsByMonth(txns, monthKey) {
+  if (monthKey === "all") return txns;
+  return txns.filter(t => extractMonth(t.date) === monthKey);
+}
 
 export default function Panel() {
   const { selectedId, setSelectedId } = useSelectedBudget();
