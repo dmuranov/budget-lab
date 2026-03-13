@@ -6,6 +6,7 @@ import { detectSalaries, classifyWithAI } from "../budget/classifier";
 import ImportPreview from "./ImportPreview";
 import AccountInfoCard from "./AccountInfoCard";
 import { base44 } from "@/api/base44Client";
+import { useAppSettings } from "../budget/useAppSettings";
 
 export default function CSVImporter({ budgetId, onImported }) {
   const [parsedData, setParsedData] = useState(null);
