@@ -83,8 +83,9 @@ export default function Presupuesto() {
     queryFn: () => base44.entities.MonthlyBudget.list("-month", 50),
   });
 
-  const [selectedId, setSelectedId] = useState(null);
-  const activeId = selectedId || budgets[0]?.id;
+
+  const { selectedId, setSelectedId } = useSelectedBudget();
+  const activeId = (selectedId === "todos" || !selectedId) ? budgets[0]?.id : selectedId;
   const activeBudget = budgets.find(b => b.id === activeId);
   const activeMonth = activeBudget?.month || "";
 
@@ -118,7 +119,7 @@ export default function Presupuesto() {
           </div>
           <h1 className="text-2xl font-bold" style={{ color: "#f1f5f9" }}>📝 Presupuesto por Categorías</h1>
         </div>
-        <BudgetSelector value={activeId} onChange={setSelectedId} />
+        <BudgetSelector value={activeId || budgets[0]?.id} onChange={setSelectedId} />
       </div>
 
       {/* Resumen */}

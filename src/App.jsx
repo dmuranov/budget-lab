@@ -33,6 +33,7 @@ const AuthenticatedApp = () => {
   }
 
   return (
+    <SelectedBudgetProvider>
     <Routes>
       <Route path="/" element={<Navigate to="/Panel" replace />} />
       <Route element={<AppLayout />}>
