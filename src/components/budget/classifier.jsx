@@ -112,10 +112,16 @@ export function classifyTransaction(description, direction) {
       return { flowType: "PAGO_TARJETA", category: "Pago Tarjeta Crédito", isRecurring: true, isFixed: true };
     }
 
-    // PASO 3: Bosnia/Croacia → Padres de Danijel (solo si NO es producto financiero)
+    // PASO 3: Tarjeta 8014 → Padres de Danijel
+    const desc = description.toUpperCase();
+    if (desc.includes("8014") && (desc.includes("COMPRA TARJ") || desc.includes("COMPRA EN"))) {
+      return { flowType: "GASTO_FAMILIA", category: "Padres de Danijel", isRecurring: false, isFixed: false };
+    }
+
+    // PASO 3b: Bosnia/Croacia (fallback geográfico)
     const esFinanciero = matchesAny(description, FINANCIAL_PRODUCT_KEYWORDS);
     if (!esFinanciero && matchesAny(description, BOSNIA_CROATIA_KEYWORDS)) {
-      return { flowType: "GASTO_FAMILIA_BOSNIA", category: "Padres de Danijel", isRecurring: false, isFixed: false };
+      return { flowType: "GASTO_FAMILIA", category: "Padres de Danijel", isRecurring: false, isFixed: false };
     }
 
     // PASO 4: Apuestas/Juego
