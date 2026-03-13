@@ -54,6 +54,26 @@ export default function Configuracion() {
       }));
     }
 
+    // Paso 2: IA para los que siguen Sin Clasificar
+    const stillUnclassified = allTxns.filter(t => {
+      const { category } = classifyTransaction(t.description, t.direction);
+      return category === "Sin Clasificar";
+    });
+
+    if (stillUnclassified.length > 0) {
+      setReclasificadoCount(count); // progreso parcial
+      for (let i = 0; i < stillUnclassified.length; i += 30) {
+        const batch = stillUnclassified.slice(i, i + 30);
+        const aiCategories = await classifyWithAI(batch, base44);
+        await Promise.all(batch.map(async (t, idx) => {
+          if (aiCategories[idx] && aiCategories[idx] !== "Sin Clasificar" && aiCategories[idx] !== t.category) {
+            await base44.entities.Transaction.update(t.id, { category: aiCategories[idx] });
+            count++;
+          }
+        }));
+      }
+    }
+
     setReclasificadoCount(count);
     setReclasificando(false);
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
