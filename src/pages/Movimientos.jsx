@@ -141,7 +141,10 @@ export default function Movimientos() {
                   }}
                   className="hover:bg-white/[0.02] transition-colors">
                   <td className="px-4 py-3 whitespace-nowrap" style={{ color: "#94a3b8" }}>{t.date}</td>
-                  <td className="px-4 py-3 max-w-[220px] truncate" style={{ color: "#f1f5f9" }}>{t.description}</td>
+                  <td className="px-4 py-3 max-w-[220px]" style={{ color: "#f1f5f9" }}>
+                    <span title={`${t.description}\nFecha: ${t.date}\nImporte: ${t.direction === "ingreso" ? "+" : "-"}${formatEUR(t.amount)}\nCategoría: ${t.category}`}
+                      className="block truncate cursor-default">{t.description}</span>
+                  </td>
                   <td className="px-4 py-3 text-center">
                     {t.direction === "ingreso"
                       ? <ArrowUp size={14} style={{ color: "#4ade80" }} />
