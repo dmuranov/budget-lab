@@ -7,12 +7,13 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import AppLayout from './components/layout/AppLayout';
-import Setup from './pages/Setup';
-import Dashboard from './pages/Dashboard';
-import Transactions from './pages/Transactions';
-import NetWorth from './pages/NetWorth';
-import Goals from './pages/Goals';
-import AIAdvisor from './pages/AIAdvisor';
+import Configuracion from './pages/Configuracion';
+import Panel from './pages/Panel';
+import Movimientos from './pages/Movimientos';
+import Patrimonio from './pages/Patrimonio';
+import Presupuesto from './pages/Presupuesto';
+import Metas from './pages/Metas';
+import AsesorIA from './pages/AsesorIA';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -26,24 +27,21 @@ const AuthenticatedApp = () => {
   }
 
   if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      navigateToLogin();
-      return null;
-    }
+    if (authError.type === 'user_not_registered') return <UserNotRegisteredError />;
+    if (authError.type === 'auth_required') { navigateToLogin(); return null; }
   }
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/Dashboard" replace />} />
+      <Route path="/" element={<Navigate to="/Panel" replace />} />
       <Route element={<AppLayout />}>
-        <Route path="/Setup" element={<Setup />} />
-        <Route path="/Dashboard" element={<Dashboard />} />
-        <Route path="/Transactions" element={<Transactions />} />
-        <Route path="/NetWorth" element={<NetWorth />} />
-        <Route path="/Goals" element={<Goals />} />
-        <Route path="/AIAdvisor" element={<AIAdvisor />} />
+        <Route path="/Configuracion" element={<Configuracion />} />
+        <Route path="/Panel" element={<Panel />} />
+        <Route path="/Movimientos" element={<Movimientos />} />
+        <Route path="/Patrimonio" element={<Patrimonio />} />
+        <Route path="/Presupuesto" element={<Presupuesto />} />
+        <Route path="/Metas" element={<Metas />} />
+        <Route path="/AsesorIA" element={<AsesorIA />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
@@ -60,7 +58,7 @@ function App() {
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
-  )
+  );
 }
 
-export default App
+export default App;
