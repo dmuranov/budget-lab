@@ -1,5 +1,5 @@
 import React from "react";
-import { formatEUR, CATEGORY_CONFIG, FIXED_CATEGORIES } from "../budget/constants";
+import { formatEUR, CATEGORY_CONFIG, GASTOS_FIJOS_CATEGORIAS } from "../budget/constants";
 
 export default function FixedObligations({ expenses, totalIncome }) {
   const fixed = {};
