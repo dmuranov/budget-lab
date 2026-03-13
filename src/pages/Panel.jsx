@@ -52,11 +52,27 @@ function filterTransactionsByMonth(txns, monthKey) {
 
 export default function Panel() {
   const { selectedId, setSelectedId } = useSelectedBudget();
+  const [selectedMonth, setSelectedMonth] = useState("all");
 
   const { data: budgets = [], isLoading: loadingBudgets } = useQuery({
     queryKey: ["budgets"],
     queryFn: () => base44.entities.MonthlyBudget.list("-month", 50),
   });
+
+  const { data: allTransactions = [] } = useQuery({
+    queryKey: ["all-transactions-for-months"],
+    queryFn: () => base44.entities.Transaction.list("date", 10000),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const availableMonths = useMemo(() => {
+    const monthSet = new Set();
+    allTransactions.forEach(t => {
+      const month = extractMonth(t.date);
+      if (month) monthSet.add(month);
+    });
+    return Array.from(monthSet).sort().reverse();
+  }, [allTransactions]);
 
   const showingTodos = selectedId === "todos";
   const activeId = showingTodos ? null : (selectedId || budgets[0]?.id);
