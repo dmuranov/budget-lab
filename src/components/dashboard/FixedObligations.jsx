@@ -4,7 +4,7 @@ import { formatEUR, CATEGORY_CONFIG, GASTOS_FIJOS_CATEGORIAS } from "../budget/c
 export default function FixedObligations({ expenses, totalIncome }) {
   const fixed = {};
   expenses.forEach(t => {
-    if (FIXED_CATEGORIES.includes(t.category)) {
+    if (GASTOS_FIJOS_CATEGORIAS.includes(t.category)) {
       fixed[t.category] = (fixed[t.category] || 0) + (t.amount || 0);
     }
   });
