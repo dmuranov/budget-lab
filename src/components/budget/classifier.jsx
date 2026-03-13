@@ -33,7 +33,7 @@ const EXPENSE_FLOWS = [
   { flowType: "TRASPASO_INTERNO", category: "Traspaso Interno", isRecurring: false, isFixed: false,
     keywords: ["traspaso entre cuentas", "traspaso propio", "traspaso a cuenta", "traspaso de cuenta", "ahorro programado"] },
   { flowType: "HIPOTECA", category: "Hipoteca", isRecurring: true, isFixed: true,
-    keywords: ["hipoteca", "cuota hipoteca", "pago hipoteca", "amortizacion hipoteca", "amortización hipoteca"] },
+    keywords: ["hipoteca", "cuota hipoteca", "pago hipoteca", "amortizacion hipoteca", "amortización hipoteca", "cuota hipoteca"] },
   { flowType: "PRÉSTAMO", category: "Préstamo", isRecurring: true, isFixed: true,
     keywords: ["prestamo", "préstamo", "cuota prestamo", "amortizacion", "amortización", "pago prestamo", "credito personal", "crédito personal", "cofidis", "cetelem", "pepper", "sofinco", "creditea", "vivus", "moneyman", "zaplo"] },
   { flowType: "PAGO_TARJETA", category: "Pago Tarjeta Crédito", isRecurring: true, isFixed: false,
@@ -43,9 +43,9 @@ const EXPENSE_FLOWS = [
   { flowType: "IMPUESTOS", category: "Impuestos/Tasas",
     keywords: ["hacienda", "aeat", "agencia tributaria", "impuesto", "irpf", "iva", "ibi", "tasa", "modelo", "recargo", "multa", "ayuntamiento"] },
   { flowType: "CAJERO", category: "Efectivo",
-    keywords: ["retirada efectivo", "disposicion efectivo", "cajero", "atm", "reintegro"] },
+    keywords: ["retirada efectivo", "disposicion efectivo", "cajero", "atm", "reintegro cajero"] },
   { flowType: "TRANSFERENCIA_ENVIADA", category: "Transferencia Enviada",
-    keywords: ["transferencia emitida", "transfer enviada", "traspaso enviado", "bizum enviado", "bizum", "envio bizum"] },
+    keywords: ["transferencia emitida", "transferencia a ", "transfer enviada", "traspaso enviado", "bizum enviado", "bizum a ", "envio bizum"] },
   { flowType: "COMISIONES", category: "Comisiones Bancarias",
     keywords: ["comision", "comisión", "mantenimiento cuenta", "comision tarjeta", "gastos bancarios", "servicio"] },
 ];
@@ -85,7 +85,7 @@ export function classifyTransaction(description, direction) {
   if (direction === "gasto") {
     const isCardOrRecibo = matchesAny(description, [
       "recibo", "domiciliacion", "domiciliación", "adeudo", "cargo recibo",
-      "compra tarjeta", "pago con tarjeta", "compra en", "pago en", "tpv", "contactless", "sin contacto"
+      "compra tarj", "compra tarjeta", "pago con tarjeta", "compra en", "pago en", "tpv", "contactless", "sin contacto"
     ]);
 
     for (const sub of EXPENSE_SUBCATEGORIES) {
