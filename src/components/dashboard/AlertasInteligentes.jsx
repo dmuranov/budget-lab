@@ -18,6 +18,16 @@ export default function AlertasInteligentes({ totalIncome, totalExpenses, netCas
   if (sinClasificar > 0) alerts.push({ level: "yellow", text: `${sinClasificar} movimientos sin clasificar — revísalos en Movimientos` });
   if (tieneTarjeta) alerts.push({ level: "yellow", text: "Pago de tarjeta de crédito detectado — sube el extracto para ver el desglose" });
 
+  // Alertas de apuestas
+  const gastoApuestas = transactions.filter(t => t.category === "Apuestas/Juego" && t.direction === "gasto").reduce((s, t) => s + (t.amount || 0), 0);
+  const apuestasPct = totalIncome > 0 ? (gastoApuestas / totalIncome * 100) : 0;
+  if (apuestasPct > 5) alerts.push({ level: "red", text: `🔴 Gasto elevado en apuestas: ${formatEUR(gastoApuestas)} este mes (${apuestasPct.toFixed(1)}% de ingresos)` });
+  else if (apuestasPct > 2) alerts.push({ level: "yellow", text: `⚠️ Gasto en apuestas: ${formatEUR(gastoApuestas)} este mes (${apuestasPct.toFixed(1)}% de ingresos)` });
+
+  // Info familia Bosnia/Croacia
+  const gastoFamilia = transactions.filter(t => t.category === "Padres de Danijel" && t.direction === "gasto").reduce((s, t) => s + (t.amount || 0), 0);
+  if (gastoFamilia > 0) alerts.push({ level: "green", text: `👨‍👩‍👦 Gastos familia Bosnia/Croacia: ${formatEUR(gastoFamilia)} este mes` });
+
   if (savingsRate >= 20) alerts.push({ level: "green", text: `Tasa de ahorro superior al 20%: ${savingsRate.toFixed(1)}%` });
   if (netCashflow > 0 && savingsRate >= 10) alerts.push({ level: "green", text: `Cashflow positivo: ${formatEUR(netCashflow)}` });
   if (sinClasificar === 0 && transactions.length > 0) alerts.push({ level: "green", text: "¡Todos los movimientos están clasificados!" });

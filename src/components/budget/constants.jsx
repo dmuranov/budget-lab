@@ -31,6 +31,8 @@ export const CATEGORY_CONFIG = {
   "Impuestos/Tasas":       { color: "#cbd5e1", icon: "📋" },
   "Regalos/Varios":        { color: "#fdba74", icon: "🎁" },
   "Hogar":                 { color: "#a3e635", icon: "🔧" },
+  "Apuestas/Juego":        { color: "#ef4444", icon: "🎰" },
+  "Padres de Danijel":     { color: "#7dd3fc", icon: "👨‍👩‍👦" },
   "Nómina":                { color: "#22c55e", icon: "💵" },
   "Pensión/Prestación":    { color: "#86efac", icon: "🏛️" },
   "Ingreso Profesional":   { color: "#a3e635", icon: "💼" },
@@ -59,7 +61,8 @@ export const NECESIDADES_CATEGORIAS = [
 
 export const DESEOS_CATEGORIAS = [
   "Restaurantes", "Compras", "Suscripciones", "Ocio",
-  "Cuidado Personal", "Viajes", "Regalos/Varios", "Hogar"
+  "Cuidado Personal", "Viajes", "Regalos/Varios", "Hogar",
+  "Apuestas/Juego", "Padres de Danijel"
 ];
 
 export const GASTOS_FIJOS_CATEGORIAS = [

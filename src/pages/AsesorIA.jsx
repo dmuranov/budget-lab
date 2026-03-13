@@ -99,6 +99,14 @@ ${recurrentes.map(t => `- ${t.description}: €${(t.amount || 0).toFixed(2)}`).j
 TOP 15 GASTOS MÁS GRANDES:
 ${topGastos.map((t, i) => `${i + 1}. ${t.description} - €${t.amount.toFixed(2)} (${t.category})`).join("\n")}
 
+APUESTAS/JUEGO:
+- Gasto mensual en apuestas: €${(gastosCat["Apuestas/Juego"] || 0).toFixed(2)}
+- % sobre ingresos: ${totalIngresos > 0 ? (((gastosCat["Apuestas/Juego"] || 0) / totalIngresos) * 100).toFixed(1) : 0}%
+
+GASTOS FAMILIA (BOSNIA/CROACIA):
+- Gasto mensual en visitas familiares: €${(gastosCat["Padres de Danijel"] || 0).toFixed(2)}
+- Incluye: compras, farmacia, gasolina, restaurantes durante viajes a ver a los padres de Danijel
+
 METAS FINANCIERAS:
 ${metas.map(m => `- ${m.icon || ""} ${m.name}: €${(m.saved_amount || 0).toFixed(2)}/€${(m.target_amount || 0).toFixed(2)} ahorrado, €${(m.monthly_contribution || 0).toFixed(2)}/mes`).join("\n") || "Sin metas definidas"}
 
@@ -136,6 +144,12 @@ Fondo emergencia (Trade Republic, MyInvestor), inversión indexada (MyInvestor, 
 
 ### 📈 Consejos Fiscales España
 Plan de pensiones, deducción maternidad, deducciones Comunidad de Madrid, declaración conjunta vs individual.
+
+### 🎰 Apuestas
+Si hay gasto en apuestas, ser directo sobre el impacto real en el presupuesto familiar. Dar el coste anual proyectado. No moralizar pero sí cuantificar exactamente cuánto se podría ahorrar o invertir con ese dinero.
+
+### 👨‍👩‍👦 Viajes Familiares
+Los gastos en Bosnia/Croacia son visitas a los padres de Danijel. No recomendar recortarlos sino optimizarlos: viajar en temporada baja, comprar vuelos con antelación, sacar efectivo en cajeros sin comisión (Revolut/N26), etc.
 
 ### 🎯 5 Acciones para Esta Semana
 5 pasos concretos con € objetivo.`;

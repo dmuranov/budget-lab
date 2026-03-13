@@ -50,6 +50,24 @@ const EXPENSE_FLOWS = [
     keywords: ["comision", "comisión", "mantenimiento cuenta", "comision tarjeta", "gastos bancarios", "servicio"] },
 ];
 
+// PRIORIDAD 1: Detección geográfica Bosnia/Croacia → "Padres de Danijel"
+const BOSNIA_CROATIA_KEYWORDS = [
+  "sarajevo", "mostar", "tuzla", "banja luka", "zenica", "bihac", "brcko", "travnik", "livno",
+  "bosnia", "herzegovina", "bih",
+  "zagreb", "split", "dubrovnik", "rijeka", "zadar", "osijek", "pula", "sibenik",
+  "croatia", "croacia", "hrvatska",
+  "konzum", "bingo", "mercator", "dm drogerie", "muller", "spar croatia", "plodine", "tommy",
+  "studenac", "tisak", "ina", "petrol", "hep", "bh telecom", "ht eronet", "m:tel", "a1 hrvatska"
+];
+
+// PRIORIDAD 2: Apuestas/Juego
+const GAMBLING_KEYWORDS = [
+  "bet365", "betfair", "codere", "luckia", "sportium", "bwin", "pokerstars", "888",
+  "william hill", "betway", "marathon", "pinnacle", "winamax", "zebet", "casino",
+  "apuesta", "apuestas", "loteria", "loterías", "once", "primitiva", "euromillones",
+  "bonoloto", "quiniela", "kirolbet", "paf", "juegging", "retabet", "marca apuestas"
+];
+
 // SUBCATEGORÍAS DE GASTO (para compras con tarjeta y recibos)
 const EXPENSE_SUBCATEGORIES = [
   { category: "Supermercado", isRecurring: false, keywords: ["mercadona", "lidl", "carrefour", "aldi", "eroski", "dia", "alcampo", "hipercor", "ahorramas", "consum", "caprabo", "simply", "bonarea", "gadis", "coviran", "supermercado", "alimentacion", "alimentación", "frutas", "fruteria", "carniceria", "pescaderia", "panaderia"] },
@@ -80,6 +98,16 @@ export function classifyTransaction(description, direction) {
         isFixed: rule.isFixed || false,
       };
     }
+  }
+
+  // PRIORIDAD 1: Bosnia/Croacia → Padres de Danijel
+  if (direction === "gasto" && matchesAny(description, BOSNIA_CROATIA_KEYWORDS)) {
+    return { flowType: "GASTO_FAMILIA_BOSNIA", category: "Padres de Danijel", isRecurring: false, isFixed: false };
+  }
+
+  // PRIORIDAD 2: Apuestas/Juego
+  if (direction === "gasto" && matchesAny(description, GAMBLING_KEYWORDS)) {
+    return { flowType: "APUESTAS", category: "Apuestas/Juego", isRecurring: false, isFixed: false };
   }
 
   if (direction === "gasto") {
