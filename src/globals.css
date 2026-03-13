@@ -1,0 +1,20 @@
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0b0e13;
+}
+::-webkit-scrollbar-thumb {
+  background: #1a2030;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2a3040;
+}
+
+/* Select dropdown dark styles */
+[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+}
