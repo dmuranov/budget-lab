@@ -46,7 +46,15 @@ const EXPENSE_FLOWS = [
     keywords: ["comision", "comisión", "mantenimiento cuenta", "comision tarjeta", "gastos bancarios", "servicio"] },
 ];
 
-// Detección geográfica Bosnia/Croacia
+// Apuestas/Juego
+const GAMBLING_KEYWORDS = [
+  "bet365", "betfair", "codere", "luckia", "sportium", "bwin", "pokerstars", "888",
+  "william hill", "betway", "marathon", "pinnacle", "winamax", "zebet", "casino",
+  "apuesta", "apuestas", "loteria", "loterías", "once", "primitiva", "euromillones",
+  "bonoloto", "quiniela", "kirolbet", "paf", "juegging", "retabet", "marca apuestas"
+];
+
+// Detección geográfica Bosnia/Croacia (fallback secundario)
 const BOSNIA_CROATIA_KEYWORDS = [
   "sarajevo", "mostar", "tuzla", "banja luka", "zenica", "bihac", "brcko", "travnik", "livno",
   "bosnia", "herzegovina", "bih",
@@ -57,14 +65,6 @@ const BOSNIA_CROATIA_KEYWORDS = [
   "hep", "bh telecom", "ht eronet", "m:tel", "a1 hrvatska",
   "spar hr", "lidl hr", "kaufland hr",
   "bam", "hrk", "kn "
-];
-
-// Apuestas/Juego
-const GAMBLING_KEYWORDS = [
-  "bet365", "betfair", "codere", "luckia", "sportium", "bwin", "pokerstars", "888",
-  "william hill", "betway", "marathon", "pinnacle", "winamax", "zebet", "casino",
-  "apuesta", "apuestas", "loteria", "loterías", "once", "primitiva", "euromillones",
-  "bonoloto", "quiniela", "kirolbet", "paf", "juegging", "retabet", "marca apuestas"
 ];
 
 // Productos financieros que NUNCA deben clasificarse como Bosnia/Croacia
@@ -93,44 +93,60 @@ const EXPENSE_SUBCATEGORIES = [
 ];
 
 export function classifyTransaction(description, direction) {
-  // PASO 1: Revolut → siempre Traspaso Interno
+  // ═══════════════════════════════════════════════════════════════
+  // PASO 1: Revolut → SIEMPRE Traspaso Interno (cualquier tarjeta)
+  // ═══════════════════════════════════════════════════════════════
   if (matchesAny(description, ["revolut"])) {
     return { flowType: "TRASPASO_INTERNO", category: "Traspaso Interno", isRecurring: false, isFixed: false };
   }
 
   if (direction === "gasto") {
-    // PASO 2a: Préstamos conocidos
+    // ═══════════════════════════════════════════════════════════════
+    // PASO 2a: Préstamos conocidos (Cofidis, Cetelem, etc.)
+    // ═══════════════════════════════════════════════════════════════
     if (matchesAny(description, ["cofidis", "cetelem", "pepper", "sofinco", "creditea", "vivus", "moneyman", "zaplo",
         "cuota prestamo", "cuota préstamo", "pago prestamo", "pago préstamo", "amortizacion", "amortización",
         "credito personal", "crédito personal", "prestamo personal"])) {
       return { flowType: "PRÉSTAMO", category: "Préstamo", isRecurring: true, isFixed: true };
     }
 
-    // PASO 2b: Pago tarjeta de crédito (Carrefour Pass, liquidaciones, etc.)
+    // ═══════════════════════════════════════════════════════════════
+    // PASO 2b: Pago tarjeta de crédito (Carrefour Pass, liquidaciones)
+    // ═══════════════════════════════════════════════════════════════
     if (matchesAny(description, ["carrefour pass", "pass carrefour", "pago tarj carrefour", "tarjeta carrefour",
         "liquidacion tarjeta", "liquidación tarjeta", "pago tarjeta", "extracto tarjeta", "cargo tarjeta"])) {
       return { flowType: "PAGO_TARJETA", category: "Pago Tarjeta Crédito", isRecurring: true, isFixed: true };
     }
 
-    // PASO 3: Tarjeta 8014 → Padres de Danijel
+    // ═══════════════════════════════════════════════════════════════
+    // PASO 3: Apuestas/Juego → ANTES de tarjeta 8014
+    // Un Bet365 con tarjeta 8014 es APUESTA, no familia
+    // ═══════════════════════════════════════════════════════════════
+    if (matchesAny(description, GAMBLING_KEYWORDS)) {
+      return { flowType: "APUESTAS", category: "Apuestas/Juego", isRecurring: false, isFixed: false };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // PASO 4: Tarjeta 8014 → Padres de Danijel
+    // (ya excluidos: Revolut, apuestas, préstamos, tarjeta crédito)
+    // ═══════════════════════════════════════════════════════════════
     const desc = description.toUpperCase();
     if (desc.includes("8014") && (desc.includes("COMPRA TARJ") || desc.includes("COMPRA EN"))) {
       return { flowType: "GASTO_FAMILIA", category: "Padres de Danijel", isRecurring: false, isFixed: false };
     }
 
-    // PASO 3b: Bosnia/Croacia (fallback geográfico)
+    // ═══════════════════════════════════════════════════════════════
+    // PASO 4b: Bosnia/Croacia (fallback geográfico, sin tarjeta 8014)
+    // ═══════════════════════════════════════════════════════════════
     const esFinanciero = matchesAny(description, FINANCIAL_PRODUCT_KEYWORDS);
     if (!esFinanciero && matchesAny(description, BOSNIA_CROATIA_KEYWORDS)) {
       return { flowType: "GASTO_FAMILIA", category: "Padres de Danijel", isRecurring: false, isFixed: false };
     }
-
-    // PASO 4: Apuestas/Juego
-    if (matchesAny(description, GAMBLING_KEYWORDS)) {
-      return { flowType: "APUESTAS", category: "Apuestas/Juego", isRecurring: false, isFixed: false };
-    }
   }
 
-  // PASO 5: Flujos genéricos (hipoteca, traspasos, comisiones, ingresos...)
+  // ═══════════════════════════════════════════════════════════════
+  // PASO 5: Flujos genéricos (hipoteca, traspasos, comisiones, ingresos)
+  // ═══════════════════════════════════════════════════════════════
   const flows = direction === "ingreso" ? INCOME_FLOWS : EXPENSE_FLOWS;
   for (const rule of flows) {
     if (matchesAny(description, rule.keywords)) {
