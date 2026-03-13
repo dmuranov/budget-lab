@@ -15,6 +15,8 @@ export default function Configuracion() {
   const [importDone, setImportDone] = useState(false);
   const [reclasificando, setReclasificando] = useState(false);
   const [reclasificadoCount, setReclasificadoCount] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteMsg, setDeleteMsg] = useState(null);
 
   const { data: transactions = [] } = useQuery({
     queryKey: ["transactions", activeBudgetId],
