@@ -19,7 +19,7 @@ const INCOME_FLOWS = [
   { flowType: "INGRESO_ALQUILER", category: "Ingreso Alquiler",
     keywords: ["alquiler recibido", "renta recibida", "ingreso alquiler", "arrendamiento"] },
   { flowType: "TRANSFERENCIA_RECIBIDA", category: "Transferencia Recibida",
-    keywords: ["transferencia recibida", "transfer recibida", "ingreso transferencia", "traspaso recibido", "bizum recibido", "ingreso bizum"] },
+    keywords: ["transferencia recibida", "transferencia a favor", "transfer recibida", "ingreso transferencia", "traspaso recibido", "bizum recibido", "ingreso bizum", "bizum a favor", "bizum de"] },
   { flowType: "DEVOLUCIÓN", category: "Devolución",
     keywords: ["devolucion", "devolución", "reembolso", "anulacion", "anulación", "retrocesion", "abono por", "rectificacion", "cashback"] },
   { flowType: "INTERESES", category: "Intereses",
