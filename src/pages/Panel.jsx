@@ -101,15 +101,15 @@ export default function Panel() {
     );
   }
 
-  const { data: allTxns = [] } = useQuery({
-    queryKey: ["all-transactions-pattern"],
-    queryFn: () => base44.entities.Transaction.list("date", 10000),
-    staleTime: 10 * 60 * 1000,
-  });
+  const filteredTransactions = useMemo(() => {
+    return filterTransactionsByMonth(allTransactions, selectedMonth);
+  }, [allTransactions, selectedMonth]);
+
+  const transactionsForCalc = filteredTransactions.filter(t => t.category !== "Traspaso Interno");
 
   const activeBudget = budgets.find(b => b.id === activeId);
   const savingsColor = savingsRate >= 20 ? "#4ade80" : savingsRate >= 10 ? "#fbbf24" : "#f87171";
-  const panelTitle = showingTodos ? "Resumen Total" : activeBudget ? formatMonthES(activeBudget.month) : "";
+  const panelTitle = showingTodos ? "Resumen Total" : (selectedMonth === "all" ? "Todos los meses" : formatMonth(selectedMonth));
 
   return (
     <div className="space-y-6">
