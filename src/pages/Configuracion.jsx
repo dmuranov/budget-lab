@@ -104,6 +104,7 @@ export default function Configuracion() {
         </div>
       </div>
 
+      <APIKeySection />
       <HouseholdForm onBudgetCreated={(b) => setActiveBudgetId(b.id)} />
       <CSVImporter budgetId={activeBudgetId} onImported={() => setImportDone(true)} />
 
