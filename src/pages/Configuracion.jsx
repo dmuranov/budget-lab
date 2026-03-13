@@ -88,22 +88,54 @@ export default function Configuracion() {
     setDeleteMsg(null);
 
     try {
-      let deleted = 0;
+      // Paso 1: Obtener TODOS los IDs de transacciones
+      setDeleteMsg("Obteniendo transacciones...");
 
-      const budgets = await base44.entities.MonthlyBudget.list("-month", 50);
+      const allBudgets = await base44.entities.MonthlyBudget.list("-month", 50);
+      let allTxnIds = [];
 
-      for (const budget of budgets) {
+      for (const budget of allBudgets) {
         const txns = await base44.entities.Transaction.filter({ budget_id: budget.id }, "date", 5000);
+        allTxnIds.push(...txns.map(t => t.id));
+      }
 
-        for (let i = 0; i < txns.length; i += 20) {
-          const batch = txns.slice(i, i + 20);
-          await Promise.all(batch.map(t => base44.entities.Transaction.delete(t.id)));
-          deleted += batch.length;
-          setDeleteMsg(`Eliminando... ${deleted} transacciones borradas`);
+      // Eliminar duplicados por si acaso
+      allTxnIds = [...new Set(allTxnIds)];
+
+      if (allTxnIds.length === 0) {
+        setDeleteMsg("No hay transacciones que eliminar.");
+        setDeleting(false);
+        return;
+      }
+
+      const total = allTxnIds.length;
+      let deleted = 0;
+      let errors = 0;
+
+      // Paso 2: Borrar de 5 en 5 con pausa de 1 segundo entre batches
+      for (let i = 0; i < allTxnIds.length; i += 5) {
+        const batch = allTxnIds.slice(i, i + 5);
+
+        const results = await Promise.allSettled(
+          batch.map(id => base44.entities.Transaction.delete(id))
+        );
+
+        deleted += results.filter(r => r.status === "fulfilled").length;
+        errors += results.filter(r => r.status === "rejected").length;
+
+        setDeleteMsg(`Eliminando... ${deleted}/${total} (${Math.round(deleted / total * 100)}%)`);
+
+        // Pausa de 1 segundo entre batches para no exceder rate limit
+        if (i + 5 < allTxnIds.length) {
+          await new Promise(r => setTimeout(r, 1000));
         }
       }
 
-      setDeleteMsg(`✅ Se eliminaron ${deleted} transacciones correctamente.`);
+      if (errors > 0) {
+        setDeleteMsg(`✅ Se eliminaron ${deleted} de ${total} transacciones. ${errors} fallaron (puedes volver a intentar).`);
+      } else {
+        setDeleteMsg(`✅ Se eliminaron ${deleted} transacciones correctamente.`);
+      }
     } catch (error) {
       console.error("DELETE ERROR:", error);
       setDeleteMsg("Error: " + (error?.message || "desconocido"));
