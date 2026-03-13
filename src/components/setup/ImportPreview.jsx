@@ -117,6 +117,7 @@ export default function ImportPreview({ transactions, budgetId, onCancel, onImpo
                   </span>
                 </td>
                 <td className="px-3 py-2">
+                  <div className="flex items-center gap-1">
                   <Select value={row.category} onValueChange={(val) => updateCategory(idx, val)}>
                     <SelectTrigger className="h-7 text-xs border-0 w-40"
                       style={{ background: "#1a2030", color: CATEGORY_CONFIG[row.category]?.color || "#94a3b8" }}>
@@ -130,6 +131,8 @@ export default function ImportPreview({ transactions, budgetId, onCancel, onImpo
                       ))}
                     </SelectContent>
                   </Select>
+                  {row.ai_classified && <span title="Clasificado por IA" className="text-xs cursor-help flex-shrink-0">🤖</span>}
+                  </div>
                 </td>
               </tr>
             ))}
