@@ -60,6 +60,15 @@ export default function Configuracion() {
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
   };
 
+  const handleDeleteAll = async () => {
+    setDeleting(true);
+    setDeleteMsg(null);
+    const res = await base44.functions.invoke('deleteAllTransactions');
+    setDeleting(false);
+    setDeleteMsg(res.data.message || res.data.error);
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
