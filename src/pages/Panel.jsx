@@ -165,8 +165,8 @@ export default function Panel() {
 
           {/* Banner nómina */}
           <BannerNomina
-            allTransactions={allTxns}
-            currentMonthTransactions={transactions}
+            allTransactions={allTransactions}
+            currentMonthTransactions={transactionsForCalc}
             budgetMonth={activeBudget?.month}
           />
 
