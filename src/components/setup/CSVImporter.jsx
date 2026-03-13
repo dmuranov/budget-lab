@@ -2,9 +2,10 @@ import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, AlertTriangle } from "lucide-react";
 import { parseCSV, parseSabadellXLS } from "../budget/csvParser";
-import { detectSalaries } from "../budget/classifier";
+import { detectSalaries, classifyWithAI } from "../budget/classifier";
 import ImportPreview from "./ImportPreview";
 import AccountInfoCard from "./AccountInfoCard";
+import { base44 } from "@/api/base44Client";
 
 export default function CSVImporter({ budgetId, onImported }) {
   const [parsedData, setParsedData] = useState(null);

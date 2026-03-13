@@ -17,6 +17,7 @@ export default function ImportPreview({ transactions, budgetId, onCancel, onImpo
   const totalIncome = incomeRows.reduce((s, t) => s + t.amount, 0);
   const totalExpenses = expenseRows.reduce((s, t) => s + t.amount, 0);
   const unclassified = rows.filter(t => t.category === "Sin Clasificar").length;
+  const aiClassified = rows.filter(t => t.ai_classified).length;
   const salaries = detectSalaries(rows);
 
   const updateCategory = (idx, category) => {

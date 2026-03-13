@@ -184,6 +184,59 @@ export function classifyTransaction(description, direction) {
   return { flowType: "DESCONOCIDO", category: "Sin Clasificar", isRecurring: false, isFixed: false };
 }
 
+// Lista de categorías válidas para la IA
+const VALID_CATEGORIES = [
+  "Supermercado", "Restaurantes", "Suministros", "Suscripciones", "Compras",
+  "Transporte", "Salud", "Educación Hija", "Ocio", "Viajes", "Cuidado Personal",
+  "Hogar", "Regalos/Varios", "Vivienda", "Hipoteca", "Préstamo",
+  "Pago Tarjeta Crédito", "Seguros", "Impuestos/Tasas", "Comisiones Bancarias",
+  "Efectivo", "Apuestas/Juego", "Padres de Danijel", "Nómina",
+  "Pensión/Prestación", "Ingreso Profesional", "Ingreso Alquiler",
+  "Transferencia Recibida", "Transferencia Enviada", "Traspaso Interno",
+  "Devolución", "Intereses", "Otro Ingreso", "Sin Clasificar"
+];
+
+export async function classifyWithAI(unclassifiedTransactions, base44Client) {
+  if (!unclassifiedTransactions || unclassifiedTransactions.length === 0) return [];
+
+  const txList = unclassifiedTransactions.map((t, i) =>
+    `${i + 1}. "${t.description}" | ${t.direction === "ingreso" ? "+" : "-"}${t.amount.toFixed(2)}€`
+  ).join("\n");
+
+  const prompt = `Eres un clasificador de movimientos bancarios españoles. Para cada movimiento, responde SOLO con el número y la categoría, nada más.
+
+CATEGORÍAS VÁLIDAS (usa exactamente estos nombres):
+${VALID_CATEGORIES.filter(c => c !== "Sin Clasificar").join(", ")}
+
+CONTEXTO:
+- Banco Sabadell, familia en Madrid (Tres Cantos)
+- "COMPRA TARJ. XXXX COMERCIO-CIUDAD" = compra con tarjeta en ese comercio
+- Marco Aldani = peluquería → Cuidado Personal
+- Si no puedes determinar la categoría con seguridad, pon "Sin Clasificar"
+
+MOVIMIENTOS A CLASIFICAR:
+${txList}
+
+RESPONDE EXACTAMENTE ASÍ (un número por línea):
+1. Categoría
+2. Categoría
+...`;
+
+  const result = await base44Client.integrations.Core.InvokeLLM({ prompt, model: "claude_sonnet_4_6" });
+
+  const lines = (typeof result === "string" ? result : result?.content || "").trim().split("\n");
+  return unclassifiedTransactions.map((_, i) => {
+    const line = lines[i] || "";
+    const match = line.match(/^\d+[\.\:\-\)]\s*(.+)$/);
+    if (match) {
+      const cat = match[1].trim();
+      const found = VALID_CATEGORIES.find(vc => vc.toLowerCase() === cat.toLowerCase() || cat.toLowerCase().includes(vc.toLowerCase()));
+      return found || "Sin Clasificar";
+    }
+    return "Sin Clasificar";
+  });
+}
+
 export function detectRecurring(transactions) {
   const descCounts = {};
   transactions.forEach(t => {
