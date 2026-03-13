@@ -3,50 +3,61 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    
+    let user;
+    try {
+      user = await base44.auth.me();
+    } catch (authErr) {
+      return Response.json({ error: 'Auth failed: ' + (authErr.message || 'unknown') }, { status: 401 });
+    }
 
     if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+      return Response.json({ error: 'Forbidden: Admin access required. Role: ' + (user?.role || 'none') }, { status: 403 });
     }
 
     let deleted = 0;
-    let maxIterations = 100;
-
+    let maxIterations = 200;
+    
     while (maxIterations > 0) {
       maxIterations--;
-
+      
       let batch;
       try {
-        batch = await base44.asServiceRole.entities.Transaction.list('created_date', 100);
+        batch = await base44.asServiceRole.entities.Transaction.list('date', 100);
       } catch (listError) {
-        break;
+        return Response.json({ 
+          error: 'List failed: ' + (listError.message || JSON.stringify(listError)),
+          deleted_so_far: deleted
+        }, { status: 500 });
       }
-
+      
       if (!batch || batch.length === 0) break;
-
+      
       const results = await Promise.allSettled(
         batch.map(t => base44.asServiceRole.entities.Transaction.delete(t.id))
       );
-
+      
       const successCount = results.filter(r => r.status === 'fulfilled').length;
-      const failCount = results.filter(r => r.status === 'rejected').length;
-
       deleted += successCount;
-
-      if (failCount === batch.length) {
-        return Response.json({
-          error: `Se eliminaron ${deleted} transacciones pero ${failCount} fallaron. Posible problema de permisos.`
+      
+      if (successCount === 0) {
+        const firstError = results.find(r => r.status === 'rejected');
+        return Response.json({ 
+          error: 'Delete failed: ' + (firstError?.reason?.message || 'unknown'),
+          deleted_so_far: deleted
         }, { status: 500 });
       }
-
+      
       if (batch.length < 100) break;
     }
 
-    return Response.json({
+    return Response.json({ 
       message: `Se eliminaron ${deleted} transacciones correctamente.`,
-      deleted: deleted
+      deleted
     });
   } catch (error) {
-    return Response.json({ error: error.message || 'Error desconocido' }, { status: 500 });
+    return Response.json({ 
+      error: 'Unexpected: ' + (error.message || JSON.stringify(error)) 
+    }, { status: 500 });
   }
 });
