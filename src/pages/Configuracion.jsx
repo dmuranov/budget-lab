@@ -222,6 +222,18 @@ export default function Configuracion() {
         )}
       </div>
 
+      {/* Diagnóstico de fechas */}
+      <div className="rounded-xl p-4" style={{ background: "#151a22", border: "1px solid rgba(255,255,255,0.06)" }}>
+        <button onClick={handleDiagnostico} className="px-4 py-2 rounded-md text-sm font-medium" style={{ background: "#a78bfa", color: "#0b0e13" }}>
+          🔍 Diagnóstico de fechas
+        </button>
+        {diagMsg && (
+          <pre className="mt-3 p-3 rounded-md text-xs overflow-auto whitespace-pre-wrap" style={{ background: "#0b0e13", color: "#94a3b8", maxHeight: "400px" }}>
+            {diagMsg}
+          </pre>
+        )}
+      </div>
+
       {/* Eliminar todas las transacciones */}
       <div className="rounded-xl p-5" style={{ background: "#151a22", border: "1px solid rgba(239,68,68,0.2)" }}>
         <h2 className="text-sm font-semibold mb-2" style={{ color: "#f87171" }}>🗑️ Zona de Peligro</h2>
