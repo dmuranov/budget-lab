@@ -7,7 +7,7 @@ import { ArrowUp, ArrowDown, Save, X, Loader2 } from "lucide-react";
 import { formatEUR, ALL_CATEGORIES, CATEGORY_CONFIG } from "../budget/constants";
 import { detectSalaries } from "../budget/classifier";
 
-export default function ImportPreview({ transactions, budgetId, onCancel, onImported }) {
+export default function ImportPreview({ transactions, budgetId, startingBalance, balanceVerified, onCancel, onImported }) {
   const queryClient = useQueryClient();
   const [rows, setRows] = useState(transactions);
   const [saving, setSaving] = useState(false);
