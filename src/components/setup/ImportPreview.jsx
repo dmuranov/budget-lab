@@ -63,6 +63,29 @@ export default function ImportPreview({ transactions, budgetId, startingBalance,
 
   return (
     <div>
+      {/* Saldo inicial detectado */}
+      {startingBalance !== null && !isNaN(startingBalance) && (
+        <div className="rounded-lg p-4 mb-4" style={{ background: "rgba(96,165,250,0.08)", border: `1px solid ${balanceVerified === false ? "rgba(248,113,113,0.4)" : "rgba(96,165,250,0.2)"}` }}>
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-sm font-medium" style={{ color: "#60a5fa" }}>💰 Saldo inicial detectado</p>
+              <p className="text-xs mt-1" style={{ color: "#94a3b8" }}>
+                Balance antes de la primera transacción importada ({rows[rows.length - 1]?.date})
+              </p>
+              {balanceVerified === true && (
+                <p className="text-xs mt-1" style={{ color: "#4ade80" }}>✅ Saldo verificado — los números cuadran</p>
+              )}
+              {balanceVerified === false && (
+                <p className="text-xs mt-1" style={{ color: "#f87171" }}>⚠️ El saldo calculado no coincide exactamente con el extracto</p>
+              )}
+            </div>
+            <p className="text-xl font-bold ml-4" style={{ color: "#4ade80" }}>
+              {startingBalance.toLocaleString("es-ES", { minimumFractionDigits: 2 })} €
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Resumen */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         {[
