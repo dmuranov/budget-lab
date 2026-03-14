@@ -1,12 +1,11 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
-import { formatEUR, formatPct } from "../components/budget/constants";
-import { useBudgetData } from "../components/budget/useBudgetData";
-import BudgetSelector, { formatMonthES } from "../components/budget/BudgetSelector";
-import { useSelectedBudget } from "../components/budget/SelectedBudgetContext";
+import { formatEUR, formatPct, NECESIDADES_CATEGORIAS, DESEOS_CATEGORIAS, GASTOS_FIJOS_CATEGORIAS } from "../components/budget/constants";
+import { useMonthFilter, formatMonthLabel, getMonthFromDate } from "../components/budget/useMonthFilter";
+import MonthSelector from "../components/shared/MonthSelector";
 import StatCard from "../components/budget/StatCard";
 import DesglosIngresos from "../components/dashboard/DesglosIngresos";
 import ObligacionesFijas from "../components/dashboard/ObligacionesFijas";
@@ -16,77 +15,81 @@ import SituacionDeuda from "../components/dashboard/SituacionDeuda";
 import SuscripcionesRecurrentes from "../components/dashboard/SuscripcionesRecurrentes";
 import TopGastos from "../components/dashboard/TopGastos";
 import AlertasInteligentes from "../components/dashboard/AlertasInteligentes";
-import ResumenMultiMes from "../components/dashboard/ResumenMultiMes";
 import BannerNomina from "../components/dashboard/BannerNomina";
 
-const MONTH_NAMES = {
-  "01": "Enero", "02": "Febrero", "03": "Marzo", "04": "Abril",
-  "05": "Mayo", "06": "Junio", "07": "Julio", "08": "Agosto",
-  "09": "Septiembre", "10": "Octubre", "11": "Noviembre", "12": "Diciembre"
-};
-
-function extractMonth(dateStr) {
-  if (!dateStr) return null;
-  const str = String(dateStr);
-  
-  // ISO: "2026-03-12"
-  const isoMatch = str.match(/^(\d{4})-(\d{2})/);
-  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}`;
-  
-  // Europeo: "12/03/2026"
-  const euMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  if (euMatch) return `${euMatch[3]}-${euMatch[2].padStart(2, "0")}`;
-  
-  return null;
-}
-
-function formatMonth(monthKey) {
-  const [year, month] = monthKey.split("-");
-  return `${MONTH_NAMES[month]} ${year}`;
-}
-
-function filterTransactionsByMonth(txns, monthKey) {
-  if (monthKey === "all") return txns;
-  return txns.filter(t => extractMonth(t.date) === monthKey);
-}
-
 export default function Panel() {
-  const { selectedId, setSelectedId } = useSelectedBudget();
-  const [selectedMonth, setSelectedMonth] = useState("all");
-
-  const { data: budgets = [], isLoading: loadingBudgets } = useQuery({
-    queryKey: ["budgets"],
-    queryFn: () => base44.entities.MonthlyBudget.list("-month", 50),
-  });
-
-  const { data: allTransactions = [] } = useQuery({
-    queryKey: ["all-transactions-for-months"],
+  const { data: allTransactions = [], isLoading } = useQuery({
+    queryKey: ["all-transactions"],
     queryFn: () => base44.entities.Transaction.list("date", 10000),
     staleTime: 5 * 60 * 1000,
   });
 
-  const availableMonths = useMemo(() => {
-    const monthSet = new Set();
-    allTransactions.forEach(t => {
-      const month = extractMonth(t.date);
-      if (month) monthSet.add(month);
-    });
-    return Array.from(monthSet).sort().reverse();
-  }, [allTransactions]);
-
-  const showingTodos = selectedId === "todos";
-  const activeId = showingTodos ? null : (selectedId || budgets[0]?.id);
-
   const {
-    budget, transactions, income, expenses,
-    totalIncome, totalExpenses, netCashflow, savingsRate,
-    expenseByCategory, incomeByCategory,
-    necesidadesTotal, deseosTotal,
-    recurring, debtPayments, totalDebt, debtToIncome,
-    isLoading,
-  } = useBudgetData(activeId);
+    selectedMonth,
+    setSelectedMonth,
+    availableMonths,
+    filteredTransactions,
+    transactionsForCalc,
+  } = useMonthFilter(allTransactions);
 
-  if (budgets.length === 0 && !loadingBudgets) {
+  // Cálculos principales
+  const income = transactionsForCalc.filter(t => t.direction === "ingreso");
+  const expenses = transactionsForCalc.filter(t => t.direction === "gasto");
+
+  const totalIncome = income.reduce((s, t) => s + (t.amount || 0), 0);
+  const totalExpenses = expenses.reduce((s, t) => s + (t.amount || 0), 0);
+  const netCashflow = totalIncome - totalExpenses;
+  const savingsRate = totalIncome > 0 ? (netCashflow / totalIncome) * 100 : 0;
+  const savingsColor = savingsRate >= 20 ? "#4ade80" : savingsRate >= 10 ? "#fbbf24" : "#f87171";
+
+  // Por categoría
+  const expenseByCategory = expenses.reduce((acc, t) => {
+    acc[t.category] = (acc[t.category] || 0) + (t.amount || 0);
+    return acc;
+  }, {});
+
+  const incomeByCategory = income.reduce((acc, t) => {
+    acc[t.category] = (acc[t.category] || 0) + (t.amount || 0);
+    return acc;
+  }, {});
+
+  // Necesidades / deseos
+  const necesidadesTotal = expenses.filter(t => NECESIDADES_CATEGORIAS.includes(t.category)).reduce((s, t) => s + (t.amount || 0), 0);
+  const deseosTotal = expenses.filter(t => DESEOS_CATEGORIAS.includes(t.category)).reduce((s, t) => s + (t.amount || 0), 0);
+
+  // Deuda
+  const debtPayments = expenses.filter(t => ["Hipoteca", "Préstamo", "Pago Tarjeta Crédito"].includes(t.category));
+  const totalDebt = debtPayments.reduce((s, t) => s + (t.amount || 0), 0);
+  const debtToIncome = totalIncome > 0 ? (totalDebt / totalIncome) * 100 : 0;
+
+  // Recurrentes
+  const recurring = expenses.filter(t => t.is_recurring);
+
+  // Tabla comparativa multi-mes
+  const monthlyBreakdown = useMemo(() => {
+    if (selectedMonth !== "all") return null;
+    const breakdown = {};
+    allTransactions.forEach(t => {
+      if (t.category === "Traspaso Interno") return;
+      const month = getMonthFromDate(t.date);
+      if (!month) return;
+      if (!breakdown[month]) breakdown[month] = { ingresos: 0, gastos: 0 };
+      if (t.direction === "ingreso") breakdown[month].ingresos += t.amount || 0;
+      else breakdown[month].gastos += t.amount || 0;
+    });
+    return Object.entries(breakdown)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, data]) => ({
+        month,
+        label: formatMonthLabel(month),
+        ingresos: Math.round(data.ingresos * 100) / 100,
+        gastos: Math.round(data.gastos * 100) / 100,
+        neto: Math.round((data.ingresos - data.gastos) * 100) / 100,
+        ahorro: data.ingresos > 0 ? Math.round((data.ingresos - data.gastos) / data.ingresos * 1000) / 10 : 0,
+      }));
+  }, [allTransactions, selectedMonth]);
+
+  if (!isLoading && allTransactions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: "rgba(74,222,128,0.1)" }}>
@@ -101,15 +104,7 @@ export default function Panel() {
     );
   }
 
-  const filteredTransactions = useMemo(() => {
-    return filterTransactionsByMonth(allTransactions, selectedMonth);
-  }, [allTransactions, selectedMonth]);
-
-  const transactionsForCalc = filteredTransactions.filter(t => t.category !== "Traspaso Interno");
-
-  const activeBudget = budgets.find(b => b.id === activeId);
-  const savingsColor = savingsRate >= 20 ? "#4ade80" : savingsRate >= 10 ? "#fbbf24" : "#f87171";
-  const panelTitle = showingTodos ? "Resumen Total" : (selectedMonth === "all" ? "Todos los meses" : formatMonth(selectedMonth));
+  const panelTitle = selectedMonth === "all" ? "Resumen Total" : formatMonthLabel(selectedMonth);
 
   return (
     <div className="space-y-6">
@@ -120,84 +115,100 @@ export default function Panel() {
           </div>
           <div>
             <h1 className="text-2xl font-bold" style={{ color: "#f1f5f9" }}>📊 Panel Principal</h1>
-            {panelTitle && <p className="text-xs" style={{ color: "#64748b" }}>{panelTitle}</p>}
+            <p className="text-xs" style={{ color: "#64748b" }}>{panelTitle}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <select
-            value={selectedMonth}
-            onChange={e => setSelectedMonth(e.target.value)}
-            className="px-3 py-2 rounded-lg text-sm font-medium"
-            style={{ background: "#1a2030", color: "#f1f5f9", border: "1px solid rgba(255,255,255,0.1)" }}
-          >
-            <option value="all">📊 Todos los meses</option>
-            {availableMonths.map(m => (
-              <option key={m} value={m}>{formatMonth(m)}</option>
-            ))}
-          </select>
-          <BudgetSelector
-            value={showingTodos ? "todos" : (activeId || budgets[0]?.id)}
-            onChange={setSelectedId}
-            showTodos={true}
-          />
-        </div>
+        <MonthSelector
+          selectedMonth={selectedMonth}
+          setSelectedMonth={setSelectedMonth}
+          availableMonths={availableMonths}
+        />
       </div>
 
-      {/* Vista multi-mes */}
-      {showingTodos ? (
-        <ResumenMultiMes budgets={budgets} />
-      ) : isLoading ? (
+      {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="w-8 h-8 border-4 rounded-full animate-spin" style={{ borderColor: "#1a2030", borderTopColor: "#4ade80" }} />
         </div>
       ) : (
         <>
-          {/* Fila 1: Tarjetas resumen */}
+          {/* Tarjetas resumen */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="💵 Ingresos Totales" value={formatEUR(totalIncome)} color="#4ade80" />
-            <StatCard title="🔥 Gastos Totales" value={formatEUR(totalExpenses)}
-              color={totalExpenses > totalIncome ? "#f87171" : "#f1f5f9"} />
-            <StatCard title="💰 Saldo Neto" value={formatEUR(netCashflow)}
-              color={netCashflow >= 0 ? "#4ade80" : "#f87171"} icon={netCashflow >= 0 ? "📈" : "📉"} />
-            <StatCard title="📊 Tasa de Ahorro" value={formatPct(savingsRate)} color={savingsColor}
-              subtitle={savingsRate >= 20 ? "¡En buen camino!" : "Objetivo: ≥20%"} />
+            <StatCard title="🔥 Gastos Totales" value={formatEUR(totalExpenses)} color={totalExpenses > totalIncome ? "#f87171" : "#f1f5f9"} />
+            <StatCard title="💰 Saldo Neto" value={formatEUR(netCashflow)} color={netCashflow >= 0 ? "#4ade80" : "#f87171"} icon={netCashflow >= 0 ? "📈" : "📉"} />
+            <StatCard title="📊 Tasa de Ahorro" value={formatPct(savingsRate)} color={savingsColor} subtitle={savingsRate >= 20 ? "¡En buen camino!" : "Objetivo: ≥20%"} />
           </div>
 
           {/* Banner nómina */}
-          <BannerNomina
-            allTransactions={allTransactions}
-            currentMonthTransactions={transactionsForCalc}
-            budgetMonth={activeBudget?.month}
-          />
+          <BannerNomina allTransactions={allTransactions} currentMonthTransactions={transactionsForCalc} budgetMonth={selectedMonth !== "all" ? selectedMonth : null} />
 
-          {/* Fila 2: Ingresos + Fijos */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <DesglosIngresos incomeByCategory={incomeByCategory} budget={budget} />
-            <ObligacionesFijas expenses={expenses} totalIncome={totalIncome} />
-          </div>
+          {/* Tabla comparativa (solo "todos los meses") */}
+          {monthlyBreakdown && (
+            <div className="rounded-xl p-5" style={{ background: "#151a22", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <h3 className="text-sm font-semibold mb-3" style={{ color: "#f1f5f9" }}>📊 Comparativa Multi-Mes</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ color: "#64748b" }}>
+                      <th className="text-left py-2">Mes</th>
+                      <th className="text-right py-2">Ingresos</th>
+                      <th className="text-right py-2">Gastos</th>
+                      <th className="text-right py-2">Neto</th>
+                      <th className="text-right py-2">Ahorro %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {monthlyBreakdown.map(row => (
+                      <tr key={row.month} className="cursor-pointer hover:bg-white/[0.02]"
+                        onClick={() => setSelectedMonth(row.month)}
+                        style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                        <td className="py-2 font-medium" style={{ color: "#f1f5f9" }}>{row.label}</td>
+                        <td className="py-2 text-right" style={{ color: "#4ade80" }}>{row.ingresos.toLocaleString("es-ES", { minimumFractionDigits: 2 })} €</td>
+                        <td className="py-2 text-right" style={{ color: "#f87171" }}>{row.gastos.toLocaleString("es-ES", { minimumFractionDigits: 2 })} €</td>
+                        <td className="py-2 text-right" style={{ color: row.neto >= 0 ? "#4ade80" : "#f87171" }}>{row.neto.toLocaleString("es-ES", { minimumFractionDigits: 2 })} €</td>
+                        <td className="py-2 text-right" style={{ color: row.ahorro >= 0 ? "#60a5fa" : "#f87171" }}>{row.ahorro.toFixed(1)}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    {(() => {
+                      const totI = monthlyBreakdown.reduce((s, r) => s + r.ingresos, 0);
+                      const totG = monthlyBreakdown.reduce((s, r) => s + r.gastos, 0);
+                      const totN = totI - totG;
+                      const totA = totI > 0 ? (totN / totI * 100) : 0;
+                      return (
+                        <tr style={{ borderTop: "2px solid rgba(255,255,255,0.1)" }}>
+                          <td className="py-2 font-bold" style={{ color: "#f1f5f9" }}>TOTAL</td>
+                          <td className="py-2 text-right font-bold" style={{ color: "#4ade80" }}>{totI.toLocaleString("es-ES", { minimumFractionDigits: 2 })} €</td>
+                          <td className="py-2 text-right font-bold" style={{ color: "#f87171" }}>{totG.toLocaleString("es-ES", { minimumFractionDigits: 2 })} €</td>
+                          <td className="py-2 text-right font-bold" style={{ color: totN >= 0 ? "#4ade80" : "#f87171" }}>{totN.toLocaleString("es-ES", { minimumFractionDigits: 2 })} €</td>
+                          <td className="py-2 text-right font-bold" style={{ color: totA >= 0 ? "#60a5fa" : "#f87171" }}>{totA.toFixed(1)}%</td>
+                        </tr>
+                      );
+                    })()}
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
 
-          {/* Fila 3: Regla 50/30/20 */}
-          <Regla502030 necesidadesTotal={necesidadesTotal} deseosTotal={deseosTotal}
-            totalIncome={totalIncome} netCashflow={netCashflow} />
-
-          {/* Fila 4: Gráfico gastos */}
-          <GraficoGastos expenseByCategory={expenseByCategory} />
-
-          {/* Fila 5: Deuda + Recurrentes */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <SituacionDeuda debtPayments={debtPayments} totalDebt={totalDebt} debtToIncome={debtToIncome} />
-            <SuscripcionesRecurrentes recurring={recurring} />
-          </div>
-
-          {/* Fila 6: Top gastos */}
-          <TopGastos expenses={expenses} />
-
-          {/* Fila 7: Alertas */}
-          <AlertasInteligentes
-            totalIncome={totalIncome} totalExpenses={totalExpenses}
-            netCashflow={netCashflow} savingsRate={savingsRate}
-            debtToIncome={debtToIncome} transactions={transactions}
-          />
+          {/* Dashboard detallado (solo mes seleccionado) */}
+          {selectedMonth !== "all" && (
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <DesglosIngresos incomeByCategory={incomeByCategory} budget={null} />
+                <ObligacionesFijas expenses={expenses} totalIncome={totalIncome} />
+              </div>
+              <Regla502030 necesidadesTotal={necesidadesTotal} deseosTotal={deseosTotal} totalIncome={totalIncome} netCashflow={netCashflow} />
+              <GraficoGastos expenseByCategory={expenseByCategory} />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <SituacionDeuda debtPayments={debtPayments} totalDebt={totalDebt} debtToIncome={debtToIncome} />
+                <SuscripcionesRecurrentes recurring={recurring} />
+              </div>
+              <TopGastos expenses={expenses} />
+              <AlertasInteligentes totalIncome={totalIncome} totalExpenses={totalExpenses} netCashflow={netCashflow} savingsRate={savingsRate} debtToIncome={debtToIncome} transactions={transactionsForCalc} />
+            </>
+          )}
 
           {/* Botón IA */}
           <div className="text-center py-4">

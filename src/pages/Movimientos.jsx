@@ -5,8 +5,8 @@ import { ArrowLeftRight, ArrowUp, ArrowDown, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatEUR, ALL_CATEGORIES, CATEGORY_CONFIG } from "../components/budget/constants";
-import BudgetSelector, { formatMonthES } from "../components/budget/BudgetSelector";
-import { useSelectedBudget } from "../components/budget/SelectedBudgetContext";
+import { useMonthFilter } from "../components/budget/useMonthFilter";
+import MonthSelector from "../components/shared/MonthSelector";
 
 const PESTAÑAS = [
   { id: "todos", label: "Todos" },
@@ -19,45 +19,25 @@ const PESTAÑAS = [
 
 export default function Movimientos() {
   const queryClient = useQueryClient();
-  const { selectedId, setSelectedId } = useSelectedBudget();
-
-  const { data: budgets = [] } = useQuery({
-    queryKey: ["budgets"],
-    queryFn: () => base44.entities.MonthlyBudget.list("-month", 50),
-  });
-
-  const showingTodos = selectedId === "todos";
-  const activeId = showingTodos ? null : (selectedId || budgets[0]?.id);
-  const activeBudget = budgets.find(b => b.id === activeId);
-
-  // Para "todos": cargamos todas las transacciones de todos los presupuestos
-  const { data: transactions = [], isLoading } = useQuery({
-    queryKey: ["transactions-movimientos", activeId, showingTodos],
-    queryFn: async () => {
-      if (showingTodos) {
-        // Cargar todas desde todos los budgets
-        const all = await Promise.all(
-          budgets.map(b => base44.entities.Transaction.filter({ budget_id: b.id }, "date", 5000))
-        );
-        return all.flat();
-      }
-      if (!activeId) return [];
-      return base44.entities.Transaction.filter({ budget_id: activeId }, "date", 5000);
-    },
-    enabled: showingTodos ? budgets.length > 0 : !!activeId,
-  });
-
-  // Filtrar por mes si hay budget activo (no todos)
-  const txFiltradas = showingTodos
-    ? transactions
-    : transactions.filter(t => activeBudget?.month && t.date?.startsWith(activeBudget.month));
-
   const [tab, setTab] = useState("todos");
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("all");
   const [sortBy, setSortBy] = useState("date");
 
-  let filtered = [...txFiltradas];
+  const { data: allTransactions = [], isLoading } = useQuery({
+    queryKey: ["all-transactions"],
+    queryFn: () => base44.entities.Transaction.list("date", 10000),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const {
+    selectedMonth,
+    setSelectedMonth,
+    availableMonths,
+    filteredTransactions,
+  } = useMonthFilter(allTransactions);
+
+  let filtered = [...filteredTransactions];
   if (tab === "ingresos") filtered = filtered.filter(t => t.direction === "ingreso");
   else if (tab === "gastos") filtered = filtered.filter(t => t.direction === "gasto");
   else if (tab === "fijos") filtered = filtered.filter(t => t.is_fixed);
@@ -79,8 +59,7 @@ export default function Movimientos() {
 
   const handleCategoryChange = async (txId, newCat) => {
     await base44.entities.Transaction.update(txId, { category: newCat });
-    queryClient.invalidateQueries({ queryKey: ["transactions-movimientos"] });
-    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["all-transactions"] });
   };
 
   return (
@@ -92,12 +71,10 @@ export default function Movimientos() {
           </div>
           <div>
             <h1 className="text-2xl font-bold" style={{ color: "#f1f5f9" }}>📋 Movimientos</h1>
-            {activeBudget && !showingTodos && (
-              <p className="text-xs" style={{ color: "#64748b" }}>{formatMonthES(activeBudget.month)}</p>
-            )}
+            <p className="text-xs" style={{ color: "#64748b" }}>{filtered.length} transacciones</p>
           </div>
         </div>
-        <BudgetSelector value={showingTodos ? "todos" : (activeId || budgets[0]?.id)} onChange={setSelectedId} showTodos={true} />
+        <MonthSelector selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} availableMonths={availableMonths} />
       </div>
 
       {/* Pestañas */}
@@ -161,15 +138,11 @@ export default function Movimientos() {
                 <tr><td colSpan={5} className="text-center py-8" style={{ color: "#64748b" }}>No hay movimientos</td></tr>
               ) : filtered.map(t => (
                 <tr key={t.id}
-                  style={{
-                    borderBottom: "1px solid rgba(255,255,255,0.04)",
-                    background: t.category === "Sin Clasificar" ? "rgba(251,191,36,0.03)" : "transparent",
-                  }}
+                  style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: t.category === "Sin Clasificar" ? "rgba(251,191,36,0.03)" : "transparent" }}
                   className="hover:bg-white/[0.02] transition-colors">
                   <td className="px-4 py-3 whitespace-nowrap" style={{ color: "#94a3b8" }}>{t.date}</td>
                   <td className="px-4 py-3 max-w-[220px]" style={{ color: "#f1f5f9" }}>
-                    <span
-                      title={`${t.description}\nFecha: ${t.date}\nImporte: ${t.direction === "ingreso" ? "+" : "-"}${formatEUR(t.amount)}\nCategoría: ${t.category}`}
+                    <span title={`${t.description}\nFecha: ${t.date}\nImporte: ${t.direction === "ingreso" ? "+" : "-"}${formatEUR(t.amount)}\nCategoría: ${t.category}`}
                       className="block truncate cursor-default">{t.description}</span>
                   </td>
                   <td className="px-4 py-3 text-center">
