@@ -121,7 +121,10 @@ export function parseSabadellXLS(arrayBuffer) {
   const headers = rows[headerRowIdx].map(c => String(c || "").toLowerCase().trim());
   const dateCol = headers.findIndex(h => h.includes("operativa") || h.includes("fecha"));
   const descCol = headers.findIndex(h => h.includes("concepto"));
-  const amountCol = headers.findIndex(h => h.includes("importe"));
+  // CRÍTICO: solo columna "Importe" — NO importar "Saldo" como transacción
+  const amountCol = headers.findIndex(h => h.trim() === "importe" || (h.includes("importe") && !h.includes("saldo")));
+  const saldoCol = headers.findIndex(h => h.trim() === "saldo" || h.includes("saldo"));
+  const ref2Col = headers.findIndex(h => h.includes("referencia 2") || h.includes("referencia2") || (h.includes("ref") && headers.filter(x => x.includes("ref")).indexOf(h) === 1));
 
   if (dateCol === -1 || descCol === -1 || amountCol === -1) {
     return { transactions: [], error: "No se encontraron columnas: F.Operativa, Concepto, Importe", metadata };
@@ -133,6 +136,9 @@ export function parseSabadellXLS(arrayBuffer) {
     const dateVal = row[dateCol];
     const desc = String(row[descCol] || "").trim();
     const amountVal = row[amountCol];
+    // Saldo: solo para calcular saldo inicial, NO genera transacción
+    const saldoVal = saldoCol !== -1 ? row[saldoCol] : undefined;
+    const cardRef = ref2Col !== -1 ? String(row[ref2Col] || "").trim() : "";
 
     if (!dateVal || !desc) continue;
 
@@ -148,9 +154,17 @@ export function parseSabadellXLS(arrayBuffer) {
 
     if (isNaN(originalAmount) || originalAmount === 0) continue;
 
+    let balanceAfter = undefined;
+    if (saldoVal !== undefined) {
+      balanceAfter = typeof saldoVal === "number" ? saldoVal : parseEurAmount(String(saldoVal || ""));
+    }
+
     const direction = originalAmount >= 0 ? "ingreso" : "gasto";
     const amount = Math.abs(originalAmount);
-    const { flowType, category, isRecurring, isFixed } = classifyTransaction(desc, direction);
+
+    // Añadir referencia de tarjeta a descripción para clasificación (detectar tarjeta 8014)
+    const descForClassify = cardRef ? `${desc} ${cardRef}` : desc;
+    const { flowType, category, isRecurring, isFixed } = classifyTransaction(descForClassify, direction);
 
     transactions.push({
       date: parsedDate,
@@ -164,11 +178,33 @@ export function parseSabadellXLS(arrayBuffer) {
       is_fixed: isFixed,
       who: "shared",
       notes: "",
+      balance_after: balanceAfter,
     });
   }
 
   detectRecurring(transactions);
-  return { transactions, error: null, metadata };
+
+  // Calcular saldo inicial: última fila (más antigua) = saldo_después - importe
+  let startingBalance = null;
+  let balanceVerified = null;
+  if (transactions.length > 0) {
+    const oldest = transactions[transactions.length - 1];
+    if (oldest.balance_after !== undefined && !isNaN(oldest.balance_after)) {
+      startingBalance = Math.round((oldest.balance_after - oldest.original_amount) * 100) / 100;
+
+      // Verificar que saldo inicial + todos los movimientos ≈ saldo de la transacción más reciente
+      const newest = transactions[0];
+      if (newest.balance_after !== undefined && !isNaN(newest.balance_after)) {
+        const totalMovs = transactions.reduce((sum, t) => sum + t.original_amount, 0);
+        const calculatedBalance = Math.round((startingBalance + totalMovs) * 100) / 100;
+        const diff = Math.abs(calculatedBalance - newest.balance_after);
+        balanceVerified = diff <= 0.05;
+        console.log(`Saldo inicial: ${startingBalance}€ | Calculado: ${calculatedBalance}€ | Real: ${newest.balance_after}€ | Diff: ${diff.toFixed(2)}€ | OK: ${balanceVerified}`);
+      }
+    }
+  }
+
+  return { transactions, error: null, metadata, startingBalance, balanceVerified };
 }
 
 export function parseCSV(text) {
