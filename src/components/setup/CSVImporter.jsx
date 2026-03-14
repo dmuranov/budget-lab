@@ -150,7 +150,9 @@ export default function CSVImporter({ budgetId, onImported }) {
           <ImportPreview
             transactions={parsedData}
             budgetId={budgetId}
-            onCancel={() => { setParsedData(null); setFileName(""); setMetadata(null); }}
+            startingBalance={startingBalance}
+            balanceVerified={balanceVerified}
+            onCancel={() => { setParsedData(null); setFileName(""); setMetadata(null); setStartingBalance(null); setBalanceVerified(null); }}
             onImported={onImported}
           />
         </div>
