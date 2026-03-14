@@ -60,7 +60,10 @@ export default function CSVImporter({ budgetId, onImported }) {
         if (result.error) { setError(result.error); setParsedData(null); }
         else {
           const txns = await processWithAI(result.transactions);
-          setParsedData(txns); setMetadata(result.metadata);
+          setParsedData(txns);
+          setMetadata(result.metadata);
+          setStartingBalance(result.startingBalance ?? null);
+          setBalanceVerified(result.balanceVerified ?? null);
         }
       };
       reader.readAsArrayBuffer(file);
