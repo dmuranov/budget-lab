@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
-import { formatEUR, formatPct, NECESIDADES_CATEGORIAS, DESEOS_CATEGORIAS, GASTOS_FIJOS_CATEGORIAS } from "../components/budget/constants";
+import { formatEUR, formatPct, NECESIDADES_CATEGORIAS, DESEOS_CATEGORIAS } from "../components/budget/constants";
 import { useMonthFilter, formatMonthLabel, getMonthFromDate } from "../components/budget/useMonthFilter";
 import MonthSelector from "../components/shared/MonthSelector";
 import StatCard from "../components/budget/StatCard";
@@ -32,7 +32,6 @@ export default function Panel() {
     transactionsForCalc,
   } = useMonthFilter(allTransactions);
 
-  // Cálculos principales
   const income = transactionsForCalc.filter(t => t.direction === "ingreso");
   const expenses = transactionsForCalc.filter(t => t.direction === "gasto");
 
@@ -42,7 +41,6 @@ export default function Panel() {
   const savingsRate = totalIncome > 0 ? (netCashflow / totalIncome) * 100 : 0;
   const savingsColor = savingsRate >= 20 ? "#4ade80" : savingsRate >= 10 ? "#fbbf24" : "#f87171";
 
-  // Por categoría
   const expenseByCategory = expenses.reduce((acc, t) => {
     acc[t.category] = (acc[t.category] || 0) + (t.amount || 0);
     return acc;
@@ -53,19 +51,15 @@ export default function Panel() {
     return acc;
   }, {});
 
-  // Necesidades / deseos
   const necesidadesTotal = expenses.filter(t => NECESIDADES_CATEGORIAS.includes(t.category)).reduce((s, t) => s + (t.amount || 0), 0);
   const deseosTotal = expenses.filter(t => DESEOS_CATEGORIAS.includes(t.category)).reduce((s, t) => s + (t.amount || 0), 0);
 
-  // Deuda
   const debtPayments = expenses.filter(t => ["Hipoteca", "Préstamo", "Pago Tarjeta Crédito"].includes(t.category));
   const totalDebt = debtPayments.reduce((s, t) => s + (t.amount || 0), 0);
   const debtToIncome = totalIncome > 0 ? (totalDebt / totalIncome) * 100 : 0;
 
-  // Recurrentes
   const recurring = expenses.filter(t => t.is_recurring);
 
-  // Tabla comparativa multi-mes
   const monthlyBreakdown = useMemo(() => {
     if (selectedMonth !== "all") return null;
     const breakdown = {};
@@ -104,10 +98,9 @@ export default function Panel() {
     );
   }
 
-  const panelTitle = selectedMonth === "all" ? "Resumen Total" : formatMonthLabel(selectedMonth);
-
   return (
     <div className="space-y-6">
+      {/* Header — UN SOLO selector aquí */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "rgba(74,222,128,0.1)" }}>
@@ -115,7 +108,9 @@ export default function Panel() {
           </div>
           <div>
             <h1 className="text-2xl font-bold" style={{ color: "#f1f5f9" }}>📊 Panel Principal</h1>
-            <p className="text-xs" style={{ color: "#64748b" }}>{panelTitle}</p>
+            <p className="text-xs" style={{ color: "#64748b" }}>
+              {selectedMonth === "all" ? "Resumen Total" : formatMonthLabel(selectedMonth)}
+            </p>
           </div>
         </div>
         <MonthSelector
@@ -131,7 +126,7 @@ export default function Panel() {
         </div>
       ) : (
         <>
-          {/* Tarjetas resumen */}
+          {/* StatCards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="💵 Ingresos Totales" value={formatEUR(totalIncome)} color="#4ade80" />
             <StatCard title="🔥 Gastos Totales" value={formatEUR(totalExpenses)} color={totalExpenses > totalIncome ? "#f87171" : "#f1f5f9"} />
@@ -139,10 +134,13 @@ export default function Panel() {
             <StatCard title="📊 Tasa de Ahorro" value={formatPct(savingsRate)} color={savingsColor} subtitle={savingsRate >= 20 ? "¡En buen camino!" : "Objetivo: ≥20%"} />
           </div>
 
-          {/* Banner nómina */}
-          <BannerNomina allTransactions={allTransactions} currentMonthTransactions={transactionsForCalc} budgetMonth={selectedMonth !== "all" ? selectedMonth : null} />
+          <BannerNomina
+            allTransactions={allTransactions}
+            currentMonthTransactions={transactionsForCalc}
+            budgetMonth={selectedMonth !== "all" ? selectedMonth : null}
+          />
 
-          {/* Tabla comparativa (solo "todos los meses") */}
+          {/* Tabla comparativa multi-mes */}
           {monthlyBreakdown && (
             <div className="rounded-xl p-5" style={{ background: "#151a22", border: "1px solid rgba(255,255,255,0.06)" }}>
               <h3 className="text-sm font-semibold mb-3" style={{ color: "#f1f5f9" }}>📊 Comparativa Multi-Mes</h3>
@@ -192,7 +190,7 @@ export default function Panel() {
             </div>
           )}
 
-          {/* Dashboard detallado (solo mes seleccionado) */}
+          {/* Dashboard detallado por mes */}
           {selectedMonth !== "all" && (
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -210,7 +208,6 @@ export default function Panel() {
             </>
           )}
 
-          {/* Botón IA */}
           <div className="text-center py-4">
             <Link to="/AsesorIA"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:scale-105"
