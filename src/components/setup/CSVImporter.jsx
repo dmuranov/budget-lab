@@ -12,6 +12,8 @@ export default function CSVImporter({ budgetId, onImported }) {
   const { getSetting } = useAppSettings();
   const [parsedData, setParsedData] = useState(null);
   const [metadata, setMetadata] = useState(null);
+  const [startingBalance, setStartingBalance] = useState(null);
+  const [balanceVerified, setBalanceVerified] = useState(null);
   const [error, setError] = useState(null);
   const [fileName, setFileName] = useState("");
   const [aiProcessing, setAiProcessing] = useState(false);
