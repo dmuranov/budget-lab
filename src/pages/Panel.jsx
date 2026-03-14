@@ -18,6 +18,7 @@ import AlertasInteligentes from "../components/dashboard/AlertasInteligentes";
 import BannerNomina from "../components/dashboard/BannerNomina";
 
 export default function Panel() {
+  console.log('PANEL RENDER — MonthSelector count check');
   const { data: allTransactions = [], isLoading } = useQuery({
     queryKey: ["all-transactions"],
     queryFn: () => base44.entities.Transaction.list("date", 10000),
