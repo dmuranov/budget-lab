@@ -20,6 +20,46 @@ export default function Configuracion() {
   const [reclasificadoCount, setReclasificadoCount] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteMsg, setDeleteMsg] = useState(null);
+  const [diagMsg, setDiagMsg] = useState(null);
+
+  const handleDiagnostico = async () => {
+    try {
+      setDiagMsg("Cargando...");
+      const txns = await base44.entities.Transaction.list("date", 5000);
+      const months = {};
+      const sampleDates = [];
+      const fieldNames = txns.length > 0 ? Object.keys(txns[0]) : [];
+      txns.forEach((t, i) => {
+        const dateVal = t.date || t.fecha || t.f_operativa || t.fecha_operativa || "NO_DATE";
+        if (i < 5) sampleDates.push({ idx: i, date: dateVal, type: typeof dateVal, description: (t.description || t.concepto || "").substring(0, 40), budget_id: t.budget_id || "none", amount: t.amount || 0 });
+        const str = String(dateVal);
+        let monthKey = "UNKNOWN";
+        const iso = str.match(/^(\d{4})-(\d{2})/);
+        if (iso) monthKey = `${iso[1]}-${iso[2]}`;
+        if (monthKey === "UNKNOWN") { const eu = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if (eu) monthKey = `${eu[3]}-${eu[2].padStart(2, "0")}`; }
+        if (monthKey === "UNKNOWN") { const ts = str.match(/(\d{4})-(\d{2})-(\d{2})T/); if (ts) monthKey = `${ts[1]}-${ts[2]}`; }
+        months[monthKey] = (months[monthKey] || 0) + 1;
+      });
+      const info = [
+        `=== DIAGNÓSTICO DE FECHAS ===`,
+        `Total transacciones: ${txns.length}`,
+        ``,
+        `Campos del primer registro:`,
+        `  ${fieldNames.join(", ")}`,
+        ``,
+        `Transacciones por mes:`,
+        ...Object.entries(months).sort().map(([m, c]) => `  ${m}: ${c}`),
+        ``,
+        `Primeras 5 transacciones:`,
+        ...sampleDates.map(s => `  #${s.idx}: date="${s.date}" (${s.type}) | budget=${s.budget_id} | ${s.description} | ${s.amount}€`),
+      ];
+      const result = info.join("\n");
+      setDiagMsg(result);
+      console.log(result);
+    } catch (error) {
+      setDiagMsg("Error: " + error.message);
+    }
+  };
 
   const { data: transactions = [] } = useQuery({
     queryKey: ["transactions", activeBudgetId],
