@@ -43,6 +43,19 @@ export default function ImportPreview({ transactions, budgetId, startingBalance,
     for (let i = 0; i < batch.length; i += 50) {
       await base44.entities.Transaction.bulkCreate(batch.slice(i, i + 50));
     }
+
+    // Guardar saldo inicial como activo en Patrimonio
+    if (startingBalance !== null && !isNaN(startingBalance) && startingBalance > 0) {
+      const oldestDate = rows[rows.length - 1]?.date || "";
+      await base44.entities.Asset.create({
+        name: "Saldo inicial Banco Sabadell",
+        value: startingBalance,
+        type: "asset",
+        notes: `Calculado automáticamente del extracto importado. Fecha inicio: ${oldestDate}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
+    }
+
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
     setSaving(false);
     onImported?.();
