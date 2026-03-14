@@ -126,7 +126,7 @@ export default function Panel() {
         </div>
       ) : (
         <>
-          {/* StatCards */}
+          {/* === StatCards === */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="💵 Ingresos Totales" value={formatEUR(totalIncome)} color="#4ade80" />
             <StatCard title="🔥 Gastos Totales" value={formatEUR(totalExpenses)} color={totalExpenses > totalIncome ? "#f87171" : "#f1f5f9"} />
